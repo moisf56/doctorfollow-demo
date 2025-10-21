@@ -7,7 +7,7 @@ pydantic-settings==2.2.1
 # Core RAG dependencies
 langgraph==0.0.20
 langchain-core==0.1.10
-langchain-aws==0.0.1
+langchain-aws==1.0.0
 langchain-community==0.0.30
 langchain-text-splitters==0.0.1
 
