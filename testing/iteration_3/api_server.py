@@ -27,13 +27,9 @@ load_dotenv()
 sys.path.append(str(Path(__file__).parent.parent))
 sys.path.append(str(Path(__file__).parent.parent / "iteration_1"))
 sys.path.append(str(Path(__file__).parent.parent / "iteration_2"))
-
+sys.path.append(str(Path(__file__).parent.parent / "iteration_3"))
 # CRITICAL EXTERNAL DEPENDENCY: Ensure rag_v3.py is accessible in one of the paths above
-try:
-    from rag_v3 import MedicalRAGv3
-except ImportError:
-    print("[ERROR] Could not import MedicalRAGv3. Ensure rag_v3.py is correctly placed.")
-    MedicalRAGv3 = None # Define a placeholder to avoid NameError if import fails
+from rag_v3 import MedicalRAGv3
 
 # Initialize FastAPI app
 app = FastAPI(
