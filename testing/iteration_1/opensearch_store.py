@@ -1,18 +1,16 @@
 """
-OpenSearch Store for DoctorFollow Medical Search Agent
-Iteration 1: BM25 lexical search implementation
-
-Implements BM25 retrieval node (will integrate with LangGraph in Iteration 4)
+Elasticsearch Store for DoctorFollow Medical Search Agent
+Iteration 1: BM25 lexical search implementation (Migrated to Elastic Cloud Serverless)
 """
 from typing import List, Dict, Any, Optional
 from opensearchpy import OpenSearch, helpers
 from dataclasses import dataclass
 import json
-
+import os # <-- New import for ENV variables
 
 @dataclass
 class SearchResult:
-    """Single search result from OpenSearch"""
+    """Single search result from Elasticsearch"""
     chunk_id: str
     text: str
     score: float
@@ -21,9 +19,9 @@ class SearchResult:
     paragraph_id: Optional[str] = None
 
 
-class OpenSearchStore:
+class ElasticsearchStore: # <-- Renamed class for clarity
     """
-    OpenSearch client for medical document retrieval
+    Elasticsearch client for medical document retrieval (Elastic Cloud Serverless)
 
     Features:
     - BM25 lexical search
@@ -31,25 +29,38 @@ class OpenSearchStore:
     - Bulk indexing
     """
 
-    def __init__(self, host: str = "localhost", port: int = 9200, index_name: str = "medical_chunks"):
+    def __init__(self): # <-- Simplified constructor; uses ENV variables
         """
-        Initialize OpenSearch connection
+        Initialize Elasticsearch connection using Elastic Cloud Serverless credentials.
+        
+        Credentials are retrieved from ES_URL, ES_API_KEY, and ES_INDEX_NAME environment variables.
+        """
+        
+        # 1. Get credentials from ENV variables
+        es_url = os.environ.get("ES_URL")
+        es_api_key = os.environ.get("ES_API_KEY")
+        index_name = os.environ.get("ES_INDEX_NAME", "medical_chunks")
 
-        Args:
-            host: OpenSearch host
-            port: OpenSearch port
-            index_name: Index name for storing chunks
-        """
+        if not es_url or not es_api_key:
+            raise EnvironmentError("ES_URL and ES_API_KEY environment variables must be set for Elastic Cloud Serverless connection.")
+
+        # 2. Initialize OpenSearch client (which is compatible with Elasticsearch)
         self.client = OpenSearch(
-            hosts=[{'host': host, 'port': port}],
-            http_compress=True,
-            use_ssl=False,
-            verify_certs=False,
+            hosts=[es_url],           # Full Elastic Cloud URL
+            api_key=es_api_key,       # API Key for authentication
+            # Elastic Cloud uses HTTPS, so these are set to TRUE
+            use_ssl=True, 
+            verify_certs=True,
             ssl_assert_hostname=False,
             ssl_show_warn=False,
+            http_compress=True,
         )
         self.index_name = index_name
         self._create_index_if_not_exists()
+
+    # NOTE: All other methods (e.g., _create_index_if_not_exists, index_chunks, search, etc.)
+    # can remain exactly as they were, as the OpenSearch client library calls are compatible
+    # with the hosted Elasticsearch service.
 
     def _create_index_if_not_exists(self):
         """Create index with medical-optimized mapping"""
@@ -249,47 +260,52 @@ class OpenSearchStore:
 
 
 if __name__ == "__main__":
-    # Test OpenSearch connection
-    print("=== OpenSearch Store Test ===\n")
+    # Test Elastic Cloud connection
+    print("=== Elastic Cloud Store Test ===\n")
 
-    store = OpenSearchStore()
+    try:
+        store = ElasticsearchStore() # <-- Now uses ENV variables
 
-    # Test indexing
-    test_chunks = [
-        {
-            "chunk_id": "test_001",
-            "text": "Amoxicillin is a penicillin antibiotic used to treat bacterial infections.",
-            "page_number": 1,
-            "paragraph_id": "p_001",
-            "document_name": "test.pdf",
-            "chunk_index": 0
-        },
-        {
-            "chunk_id": "test_002",
-            "text": "Pediatric dosing for amoxicillin is 20-40 mg/kg/day divided into 2-3 doses.",
-            "page_number": 2,
-            "paragraph_id": "p_002",
-            "document_name": "test.pdf",
-            "chunk_index": 1
-        }
-    ]
+        # Test indexing
+        test_chunks = [
+            {
+                "chunk_id": "test_001",
+                "text": "Amoxicillin is a penicillin antibiotic used to treat bacterial infections.",
+                "page_number": 1,
+                "paragraph_id": "p_001",
+                "document_name": "test.pdf",
+                "chunk_index": 0
+            },
+            {
+                "chunk_id": "test_002",
+                "text": "Pediatric dosing for amoxicillin is 20-40 mg/kg/day divided into 2-3 doses.",
+                "page_number": 2,
+                "paragraph_id": "p_002",
+                "document_name": "test.pdf",
+                "chunk_index": 1
+            }
+        ]
 
-    result = store.index_chunks(test_chunks)
-    print(f"\nIndexing result: {result}")
+        result = store.index_chunks(test_chunks)
+        print(f"\nIndexing result: {result}")
 
-    # Test search
-    print("\n--- Testing Search ---")
-    results = store.search("amoxicillin dose children", top_k=5)
+        # Test search
+        print("\n--- Testing Search ---")
+        results = store.search("amoxicillin dose children", top_k=5)
 
-    for i, result in enumerate(results, 1):
-        print(f"\n{i}. Score: {result.score:.3f}")
-        print(f"   Text: {result.text[:100]}...")
-        print(f"   Page: {result.page_number}")
+        for i, result in enumerate(results, 1):
+            print(f"\n{i}. Score: {result.score:.3f}")
+            print(f"   Text: {result.text[:100]}...")
+            print(f"   Page: {result.page_number}")
 
-    # Stats
-    print("\n--- Index Stats ---")
-    stats = store.get_stats()
-    print(json.dumps(stats, indent=2))
+        # Stats
+        print("\n--- Index Stats ---")
+        stats = store.get_stats()
+        print(json.dumps(stats, indent=2))
 
-    store.close()
-    print("\n[OK] Test complete!")
+        store.close()
+        print("\n[OK] Test complete!")
+        
+    except EnvironmentError as e:
+        print(f"FATAL ERROR: {e}")
+        print("Please ensure ES_URL and ES_API_KEY are set correctly in your environment.")
