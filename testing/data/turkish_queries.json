@@ -1,0 +1,161 @@
+{
+  "evaluation_queries": [
+    {
+      "id": "q001",
+      "query_turkish": "Çocuklarda amoksisilin dozu nedir?",
+      "query_english": "What is the amoxicillin dose for children?",
+      "category": "dosage",
+      "expected_entities": ["amoxicillin", "dose", "children"],
+      "expected_answer_contains": ["mg/kg", "dose"],
+      "requires_function_call": false
+    },
+    {
+      "id": "q002",
+      "query_turkish": "Orta kulak iltihabı nasıl tedavi edilir?",
+      "query_english": "How is otitis media treated?",
+      "category": "treatment",
+      "expected_entities": ["otitis media", "treatment"],
+      "expected_answer_contains": ["antibiotic", "treatment"],
+      "requires_function_call": false
+    },
+    {
+      "id": "q003",
+      "query_turkish": "Parasetamol yan etkileri nelerdir?",
+      "query_english": "What are the side effects of paracetamol?",
+      "category": "side_effects",
+      "expected_entities": ["paracetamol", "side effects"],
+      "expected_answer_contains": ["side effect", "adverse"],
+      "requires_function_call": false
+    },
+    {
+      "id": "q004",
+      "query_turkish": "Bronşit belirtileri nelerdir?",
+      "query_english": "What are the symptoms of bronchitis?",
+      "category": "symptoms",
+      "expected_entities": ["bronchitis", "symptoms"],
+      "expected_answer_contains": ["cough", "symptom"],
+      "requires_function_call": false
+    },
+    {
+      "id": "q005",
+      "query_turkish": "25 kiloluk 7 yaşındaki bir çocuk için amoksisilin dozunu hesapla",
+      "query_english": "Calculate amoxicillin dose for a 7-year-old child weighing 25kg",
+      "category": "dose_calculation",
+      "expected_entities": ["amoxicillin", "25kg", "7 years"],
+      "expected_answer_contains": ["mg"],
+      "requires_function_call": true,
+      "function_name": "calc_amoxicillin_dose",
+      "function_params": {"weight_kg": 25, "age_years": 7}
+    },
+    {
+      "id": "q006",
+      "query_turkish": "Bebeklerde antibiyotik kullanımı güvenli midir?",
+      "query_english": "Is antibiotic use safe in infants?",
+      "category": "safety",
+      "expected_entities": ["antibiotic", "infant", "safety"],
+      "expected_answer_contains": ["infant", "safe"],
+      "requires_function_call": false
+    },
+    {
+      "id": "q007",
+      "query_turkish": "Penisilin alerjisi olan çocuklar için alternatif antibiyotikler nelerdir?",
+      "query_english": "What are alternative antibiotics for children with penicillin allergy?",
+      "category": "contraindication",
+      "expected_entities": ["penicillin", "allergy", "alternative", "antibiotic"],
+      "expected_answer_contains": ["allergy", "alternative"],
+      "requires_function_call": false
+    },
+    {
+      "id": "q008",
+      "query_turkish": "Astım tedavisinde kullanılan ilaçlar nelerdir?",
+      "query_english": "What medications are used in asthma treatment?",
+      "category": "treatment",
+      "expected_entities": ["asthma", "treatment", "medication"],
+      "expected_answer_contains": ["asthma", "treatment"],
+      "requires_function_call": false
+    },
+    {
+      "id": "q009",
+      "query_turkish": "Yüksek ateş için önerilen doz nedir?",
+      "query_english": "What is the recommended dose for high fever?",
+      "category": "dosage",
+      "expected_entities": ["fever", "dose"],
+      "expected_answer_contains": ["fever", "dose", "mg"],
+      "requires_function_call": false
+    },
+    {
+      "id": "q010",
+      "query_turkish": "İbuprofen ve parasetamol birlikte kullanılabilir mi?",
+      "query_english": "Can ibuprofen and paracetamol be used together?",
+      "category": "drug_interaction",
+      "expected_entities": ["ibuprofen", "paracetamol", "interaction"],
+      "expected_answer_contains": ["together", "combination"],
+      "requires_function_call": false
+    },
+    {
+      "id": "q011",
+      "query_turkish": "Bebeklerde dehidratasyon belirtileri nelerdir?",
+      "query_english": "What are the signs of dehydration in infants?",
+      "category": "symptoms",
+      "expected_entities": ["dehydration", "infant", "signs"],
+      "expected_answer_contains": ["dehydration", "sign"],
+      "requires_function_call": false
+    },
+    {
+      "id": "q012",
+      "query_turkish": "Boğaz ağrısı için hangi antibiyotik önerilir?",
+      "query_english": "Which antibiotic is recommended for sore throat?",
+      "category": "treatment",
+      "expected_entities": ["sore throat", "antibiotic"],
+      "expected_answer_contains": ["throat", "antibiotic"],
+      "requires_function_call": false
+    },
+    {
+      "id": "q013",
+      "query_turkish": "Çocuklarda normal solunum hızı nedir?",
+      "query_english": "What is the normal respiratory rate in children?",
+      "category": "vital_signs",
+      "expected_entities": ["respiratory rate", "children", "normal"],
+      "expected_answer_contains": ["respiratory", "rate"],
+      "requires_function_call": false
+    },
+    {
+      "id": "q014",
+      "query_turkish": "Aşı sonrası ateş normal midir?",
+      "query_english": "Is fever after vaccination normal?",
+      "category": "safety",
+      "expected_entities": ["fever", "vaccination", "normal"],
+      "expected_answer_contains": ["fever", "vaccination"],
+      "requires_function_call": false
+    },
+    {
+      "id": "q015",
+      "query_turkish": "3 aylık bebek için vücut yüzey alanını hesapla (5kg, 60cm)",
+      "query_english": "Calculate body surface area for 3-month-old infant (5kg, 60cm)",
+      "category": "calculation",
+      "expected_entities": ["body surface area", "infant"],
+      "expected_answer_contains": ["m2", "BSA"],
+      "requires_function_call": true,
+      "function_name": "bsa_mosteller",
+      "function_params": {"weight_kg": 5, "height_cm": 60}
+    }
+  ],
+  "metadata": {
+    "total_queries": 15,
+    "language": "Turkish queries for English PDF",
+    "categories": {
+      "dosage": 2,
+      "treatment": 4,
+      "side_effects": 1,
+      "symptoms": 3,
+      "dose_calculation": 1,
+      "safety": 2,
+      "contraindication": 1,
+      "drug_interaction": 1,
+      "vital_signs": 1,
+      "calculation": 1
+    },
+    "requires_function_call": 2,
+    "source_pdf": "Nelson-essentials-of-pediatrics-233-282.pdf"
+  }
+}

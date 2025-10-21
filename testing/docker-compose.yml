@@ -1,0 +1,95 @@
+# Docker Compose for DoctorFollow Medical Search Agent
+# Infrastructure: OpenSearch + PostgreSQL (pgvector) + Neo4j
+
+services:
+  # ============================================
+  # OpenSearch - BM25 Lexical Search
+  # ============================================
+  opensearch:
+    image: opensearchproject/opensearch:2.11.0
+    container_name: doctorfollow-opensearch
+    environment:
+      - discovery.type=single-node
+      - bootstrap.memory_lock=true
+      - "OPENSEARCH_JAVA_OPTS=-Xms512m -Xmx512m"
+      - DISABLE_SECURITY_PLUGIN=true  # Disable for local dev
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+      nofile:
+        soft: 65536
+        hard: 65536
+    ports:
+      - "9200:9200"  # REST API
+      - "9600:9600"  # Performance Analyzer
+    volumes:
+      - opensearch-data:/usr/share/opensearch/data
+    networks:
+      - doctorfollow-net
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:9200/_cluster/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  # ============================================
+  # PostgreSQL with pgvector - Semantic Search
+  # ============================================
+  postgres:
+    image: pgvector/pgvector:pg16
+    container_name: doctorfollow-postgres
+    environment:
+      POSTGRES_DB: doctorfollow
+      POSTGRES_USER: doctor
+      POSTGRES_PASSWORD: follow123
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    networks:
+      - doctorfollow-net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U doctor -d doctorfollow"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ============================================
+  # Neo4j - Medical Knowledge Graph
+  # ============================================
+  neo4j:
+    image: neo4j:5.14.0
+    container_name: doctorfollow-neo4j
+    environment:
+      NEO4J_AUTH: neo4j/doctorfollow123
+      NEO4J_PLUGINS: '["apoc"]'
+      NEO4J_dbms_security_procedures_unrestricted: apoc.*
+      NEO4J_dbms_memory_heap_max__size: 1G
+    ports:
+      - "7474:7474"  # Browser UI
+      - "7687:7687"  # Bolt protocol
+    volumes:
+      - neo4j-data:/data
+      - neo4j-logs:/logs
+    networks:
+      - doctorfollow-net
+    healthcheck:
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:7474 || exit 1"]
+      interval: 15s
+      timeout: 10s
+      retries: 5
+
+networks:
+  doctorfollow-net:
+    driver: bridge
+
+volumes:
+  opensearch-data:
+    driver: local
+  postgres-data:
+    driver: local
+  neo4j-data:
+    driver: local
+  neo4j-logs:
+    driver: local

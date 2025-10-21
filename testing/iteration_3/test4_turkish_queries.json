@@ -1,0 +1,96 @@
+{
+  "test_name": "Test 4 - Turkish Clinical Case Evaluation with RAG v3",
+  "test_date": "2025-01-19",
+  "description": "USMLE/NBME-style challenging case-based Turkish queries evaluating RAG v3 (BM25 + Semantic + KG) on English neonatal medicine PDF",
+  "pdf_source": "Nelson Essentials of Pediatrics, pages 233-282 (Neonatal Medicine)",
+  "difficulty_level": "Clinical reasoning and differential diagnosis",
+
+  "test_queries": [
+    {
+      "id": "tq001",
+      "query_turkish": "Zamanında doğan bir bebek, doğumdan 6 saat sonra taşipne (60/dk), inleme ve interkostal çekilmeler gösteriyor. Akciğer grafisinde bilateral granüler patern ve hava bronkogramları görülüyor. En olası tanı nedir ve ilk basamak tedavi ne olmalıdır?",
+      "query_english": "A term newborn presents 6 hours after birth with tachypnea (60/min), grunting, and intercostal retractions. Chest X-ray shows bilateral granular pattern and air bronchograms. What is the most likely diagnosis and what should be the first-line treatment?",
+      "category": "differential_diagnosis_and_treatment",
+      "clinical_reasoning_required": true,
+      "expected_answer_turkish": "En olası tanı RDS (Respiratory Distress Syndrome / Hiyalin Membran Hastalığı)'dir. Bilateral granüler patern ve hava bronkogramları tipik radyolojik bulgulardır. İlk basamak tedavi eksogen surfaktan uygulaması olmalıdır. Ek olarak oksijen desteği, CPAP veya gerekirse mekanik ventilasyon başlatılmalıdır. Surfaktan tedavisi mümkün olan en kısa sürede (tercihen ilk 2 saat içinde) verilmelidir.",
+      "expected_entities": ["RDS", "taşipne", "interkostal çekilmeler", "granüler patern", "hava bronkogramları", "surfaktan", "CPAP", "oksijen"],
+      "differential_diagnoses": ["RDS", "transient tachypnea of newborn", "meconium aspiration", "pneumonia"],
+      "key_findings": ["bilateral granular pattern", "air bronchograms", "respiratory distress at 6 hours"]
+    },
+    {
+      "id": "tq002",
+      "query_turkish": "35 haftalık prematüre bir bebek, postnatal 3. günde apne epizodları (>20 saniye) ve bradikardi (<100/dk) yaşıyor. Fizik muayenede ateş yok, vital bulgular stabil. Bu durumun en olası nedeni nedir ve hangi tedavi önerilir?",
+      "query_english": "A 35-week premature infant experiences apnea episodes (>20 seconds) and bradycardia (<100/min) on postnatal day 3. Physical exam shows no fever, vital signs are stable. What is the most likely cause and what treatment is recommended?",
+      "category": "clinical_management_age_specific",
+      "clinical_reasoning_required": true,
+      "expected_answer_turkish": "En olası tanı prematürite apnesidir. 35 haftalık prematüre bebeklerde merkezi sinir sistemi immatüritesi nedeniyle apne epizodları yaygındır. Öncelikle enfeksiyon, anemi, hipoglisemi, elektrolit bozuklukları gibi diğer nedenler dışlanmalıdır. Tedavi olarak kafein sitrat (ilk tercih) veya teofilin gibi metilksantin tedavisi başlatılmalıdır. CPAP desteği de faydalı olabilir. Apne monitorizasyonu devam etmelidir.",
+      "expected_entities": ["apne", "prematürite", "bradikardi", "kafein", "teofilin", "CPAP", "monitorizasyon"],
+      "differential_diagnoses": ["apnea of prematurity", "sepsis", "anemia", "hypoglycemia", "seizures"],
+      "key_findings": ["35 weeks gestation", "day 3", "apnea >20 sec", "bradycardia", "no fever"]
+    },
+    {
+      "id": "tq003",
+      "query_turkish": "Yenidoğan bir bebek doğumdan hemen sonra santral siyanoz gösteriyor. %100 oksijen verilmesine rağmen oksijen saturasyonu %75'in üzerine çıkmıyor. Kalp muayenesinde 2/6 sistolik üfürüm duyuluyor. Hiperoksik test negatif. Ayırıcı tanıda hangi kardiyak patolojiler düşünülmeli ve ilk yapılması gereken tetkik nedir?",
+      "query_english": "A newborn shows central cyanosis immediately after birth. Despite 100% oxygen administration, oxygen saturation doesn't rise above 75%. Cardiac exam reveals a 2/6 systolic murmur. Hyperoxia test is negative. What cardiac pathologies should be in the differential diagnosis and what is the first diagnostic test to order?",
+      "category": "differential_diagnosis_diagnostic_workup",
+      "clinical_reasoning_required": true,
+      "expected_answer_turkish": "Hiperoksik testin negatif olması siyanotik konjenital kalp hastalığını düşündürür. Ayırıcı tanıda büyük damarların transpozisyonu, Fallot tetralojisi, pulmoner atrezi, triküspit atrezisi ve total anomalous pulmoner venöz dönüş gibi siyanotik konjenital kalp hastalıkları yer alır. PPHN (persistent pulmonary hypertension) de düşünülmelidir. İlk yapılması gereken tetkik ekokardiyografidir. Ayrıca göğüs röntgeni ve EKG de yararlı olabilir. Acil kardiyoloji konsültasyonu gereklidir. Prostaglandin E1 infüzyonu duktus bağımlı lezyonlar için düşünülmelidir.",
+      "expected_entities": ["siyanoz", "hiperoksik test", "konjenital kalp hastalığı", "ekokardiyografi", "prostaglandin", "PPHN", "büyük damarların transpozisyonu"],
+      "differential_diagnoses": ["transposition of great arteries", "tetralogy of Fallot", "PPHN", "total anomalous pulmonary venous return", "pulmonary atresia"],
+      "key_findings": ["central cyanosis", "negative hyperoxia test", "systolic murmur", "oxygen saturation <75%"]
+    },
+    {
+      "id": "tq004",
+      "query_turkish": "Term bebek, doğumdan 12 saat sonra galaktoz-1-fosfat üridiltransferaz eksikliği tanısı konulan yenidoğan metabolik tarama pozitif geldi. Bebek şu anda asemptomatik. Acil hangi müdahale yapılmalı ve uzun dönem komplikasyonları nelerdir?",
+      "query_english": "A term infant's newborn metabolic screening comes back positive for galactose-1-phosphate uridyltransferase deficiency 12 hours after birth. The baby is currently asymptomatic. What urgent intervention should be done and what are the long-term complications?",
+      "category": "metabolic_emergency_management",
+      "clinical_reasoning_required": true,
+      "expected_answer_turkish": "Bu galaktosemi (klasik galaktosemi) tanısıdır. Acil müdahale olarak tüm galaktoz içeren besinler (anne sütü ve formül süt dahil) derhal kesilmelidir. Bebek soya bazlı formül veya galaktoz içermeyen özel formülle beslenmeli. Galaktoz maruziyeti devam ederse akut komplikasyonlar (hipoglisemi, sarılık, hepatomegali, katarakt, E. coli sepsisi) gelişebilir. Uzun dönem komplikasyonlar arasında intellectual disability (mental gerilik), ovarian failure (kızlarda), ataksi ve konuşma bozuklukları yer alır. Yaşam boyu galaktoz kısıtlı diyet gereklidir.",
+      "expected_entities": ["galaktosemi", "metabolik tarama", "galaktoz", "soya formül", "katarakt", "sepsis", "hepatomegali", "intellectual disability"],
+      "differential_diagnoses": [],
+      "key_findings": ["galactose-1-phosphate uridyltransferase deficiency", "newborn screening positive", "asymptomatic", "12 hours old"],
+      "requires_immediate_action": true
+    },
+    {
+      "id": "tq005",
+      "query_turkish": "38 haftalık bebek, zamanında membran rüptürü sonrası 18 saat sonra doğdu. Anne GBS (Group B Streptococcus) taşıyıcısı ve intrapartum antibiyotik profilaksisi almamış. Bebek postnatal 8. saatte taşipneik, letarjik ve beslenemiyor. WBC: 4000/mm³ (düşük), CRP yükselmiş. En olası tanı nedir ve ampirik antibiyotik tedavisi nasıl olmalı?",
+      "query_english": "A 38-week infant was born 18 hours after rupture of membranes at term. Mother is GBS (Group B Streptococcus) carrier and did not receive intrapartum antibiotic prophylaxis. Baby at 8 hours postnatal is tachypneic, lethargic, and unable to feed. WBC: 4000/mm³ (low), CRP elevated. What is the most likely diagnosis and what should be the empiric antibiotic therapy?",
+      "category": "infection_diagnosis_treatment",
+      "clinical_reasoning_required": true,
+      "expected_answer_turkish": "En olası tanı erken başlangıçlı neonatal sepsis (early-onset sepsis) olup, etken olarak GBS (Group B Streptococcus) şüphelidir. Risk faktörleri: anne GBS taşıyıcısı, intrapartum antibiyotik profilaksisi yok, membran rüptürü >18 saat. Klinik bulgular (taşipne, letarji, beslenememe) ve laboratuvar bulguları (lökopeni, CRP yüksekliği) sepsis lehine. Ampirik antibiyotik tedavisi ampisilin + gentamisin kombinasyonu olmalıdır. Kan, idrar, BOS kültürleri alınmalı. Göğüs röntgeni çekilmeli. Klinik cevaba göre 48-72 saat sonra tedavi gözden geçirilmeli. Kültürler negatif ve bebek iyiyse antibiyotik kesilebilir.",
+      "expected_entities": ["sepsis", "GBS", "erken başlangıçlı sepsis", "ampisilin", "gentamisin", "kan kültürü", "BOS", "lökopeni", "CRP"],
+      "differential_diagnoses": ["early-onset sepsis (GBS)", "pneumonia", "meningitis", "congenital infection"],
+      "key_findings": ["GBS carrier mother", "ROM >18 hours", "no intrapartum prophylaxis", "tachypnea", "lethargy", "leukopenia", "elevated CRP"]
+    }
+  ],
+
+  "evaluation_criteria": {
+    "language_match": "Response must be in Turkish (matching query language)",
+    "medical_accuracy": "Diagnosis and treatment must be medically accurate based on clinical presentation",
+    "clinical_reasoning": "Must demonstrate logical diagnostic reasoning and appropriate differential diagnosis",
+    "entity_coverage": "Response should mention key medical entities and findings",
+    "source_citation": "Response should cite PDF sources appropriately",
+    "kg_enrichment": "Response should benefit from knowledge graph relationships (e.g., Disease→Symptom, Drug→Disease)",
+    "completeness": "Must address all parts of the question (diagnosis AND management/treatment)",
+    "fluency": "Turkish response should be natural, medically appropriate, and professional"
+  },
+
+  "expected_kg_contributions": {
+    "entity_recognition": "KG should recognize diseases, symptoms, drugs from queries and chunks",
+    "relationship_expansion": "KG should connect related entities (e.g., RDS → surfactant, sepsis → ampicillin+gentamicin)",
+    "multi_hop_reasoning": "KG should traverse relationships (e.g., Disease → Symptom → Related Disease)",
+    "disambiguation": "KG should help disambiguate abbreviations (RDS, GBS, PPHN, etc.)"
+  },
+
+  "benchmark_comparison": {
+    "dataset_inspiration": "USMLE Step 2/3, NBME Pediatrics Shelf",
+    "difficulty_level": "Clinical case-based (beyond simple fact retrieval)",
+    "question_types": [
+      "Differential diagnosis from clinical presentation",
+      "Age-specific management (premature vs term)",
+      "Diagnostic workup ordering",
+      "Metabolic emergency recognition",
+      "Infection diagnosis and empiric treatment"
+    ]
+  }
+}
