@@ -23,11 +23,17 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # Add parent directories for imports
+# NOTE: This section assumes your rag_v3.py and related files are in parent/sibling directories
 sys.path.append(str(Path(__file__).parent.parent))
 sys.path.append(str(Path(__file__).parent.parent / "iteration_1"))
 sys.path.append(str(Path(__file__).parent.parent / "iteration_2"))
 
-from rag_v3 import MedicalRAGv3
+# CRITICAL EXTERNAL DEPENDENCY: Ensure rag_v3.py is accessible in one of the paths above
+try:
+    from rag_v3 import MedicalRAGv3
+except ImportError:
+    print("[ERROR] Could not import MedicalRAGv3. Ensure rag_v3.py is correctly placed.")
+    MedicalRAGv3 = None # Define a placeholder to avoid NameError if import fails
 
 # Initialize FastAPI app
 app = FastAPI(
@@ -64,13 +70,6 @@ rag_system: Optional[MedicalRAGv3] = None
 def verify_credentials(credentials: HTTPBasicCredentials = Depends(security)):
     """
     Verify username and password for HTTP Basic Auth
-
-    This is a simple authentication for demo purposes.
-    For production, consider:
-    - JWT tokens
-    - OAuth 2.0
-    - Database-backed user management
-    - Password hashing with bcrypt
     """
     correct_username = secrets.compare_digest(credentials.username.encode("utf8"), DEMO_USERNAME.encode("utf8"))
     correct_password = secrets.compare_digest(credentials.password.encode("utf8"), DEMO_PASSWORD.encode("utf8"))
@@ -97,8 +96,13 @@ async def startup_event():
     print(f"Allowed Origins: {allowed_origins}")
     print("="*80)
     try:
-        rag_system = MedicalRAGv3()
-        print("\n[OK] RAG v3 system initialized successfully")
+        # Check if MedicalRAGv3 was successfully imported
+        if MedicalRAGv3:
+            rag_system = MedicalRAGv3()
+            print("\n[OK] RAG v3 system initialized successfully")
+        else:
+            print("\n[ERROR] RAG system not initialized due to missing MedicalRAGv3 class.")
+            # Do not raise here, allow the server to start for health check, but endpoints will fail
     except Exception as e:
         print(f"\n[ERROR] Failed to initialize RAG system: {e}")
         import traceback
@@ -162,12 +166,6 @@ class LoginResponse(BaseModel):
 def classify_query_unified(query: str, conversation_history: List[Message]) -> tuple:
     """
     Single LLM call to detect language, classify type, and determine complexity
-
-    Returns:
-        tuple: (language, query_type, complexity) where:
-        - language: 'en' or 'tr'
-        - query_type: 'casual' or 'medical'
-        - complexity: 'simple' or 'complex' (only for medical queries)
     """
     if rag_system is None or rag_system.llm is None:
         return ('en', 'medical', 'simple')
@@ -262,14 +260,6 @@ Classification:"""
 def generate_conversational_response_with_llm(query: str, conversation_history: List[Message], language: str = 'en') -> str:
     """
     Use LLM to generate a friendly conversational response without RAG
-
-    Args:
-        query: User's conversational query
-        conversation_history: Previous conversation messages
-        language: 'en' or 'tr'
-
-    Returns:
-        Conversational response
     """
     if rag_system is None or rag_system.llm is None:
         return "Hello! I'm your medical AI assistant. How can I help you today?"
@@ -345,12 +335,19 @@ async def root():
 async def health_check():
     """Detailed health check (no auth required)"""
     if rag_system is None:
-        raise HTTPException(status_code=503, detail="RAG system not initialized")
+        # Check if RAG was expected but failed to load
+        if MedicalRAGv3 is None:
+            detail_msg = "RAG system class not found (MedicalRAGv3 missing from rag_v3 module)"
+        else:
+            detail_msg = "RAG system not initialized (likely an error during startup)"
+
+        raise HTTPException(status_code=503, detail=detail_msg)
 
     return {
         "status": "healthy",
         "rag_initialized": True,
         "components": {
+            # These assume connection checks are implemented in RAG v3's initialization
             "opensearch": True,
             "pgvector": True,
             "neo4j": True,
@@ -373,10 +370,8 @@ async def login(credentials: HTTPBasicCredentials = Depends(security)):
             username=username
         )
     except HTTPException:
-        return LoginResponse(
-            success=False,
-            message="Invalid username or password"
-        )
+        # Re-raise the HTTPException from verify_credentials to ensure proper 401 response header
+        raise
 
 
 @app.post("/chat", response_model=ChatResponse)
@@ -386,11 +381,6 @@ async def chat(
 ):
     """
     Main chat endpoint with conversational AI (requires authentication)
-
-    Flow:
-    1. Classify query (conversational vs medical)
-    2. If conversational: Generate friendly response without RAG
-    3. If medical: Full RAG pipeline (retrieval + KG + LLM)
     """
     if rag_system is None:
         raise HTTPException(
@@ -497,16 +487,6 @@ async def chat_stream(
 ):
     """
     Streaming chat endpoint with real-time thinking steps (requires authentication)
-
-    Streams JSON events:
-    - {type: "thinking_start"}
-    - {type: "thinking", content: "..."}
-    - {type: "thinking_end"}
-    - {type: "answer_start"}
-    - {type: "answer", content: "..."}
-    - {type: "answer_end"}
-    - {type: "references", content: "..."}
-    - {type: "done"}
     """
     if rag_system is None:
         raise HTTPException(status_code=503, detail="RAG system not initialized")
@@ -571,12 +551,14 @@ async def chat_stream(
             reasoning_match = re.search(r'<reasoning>([\s\S]*?)</reasoning>', full_answer)
             if reasoning_match:
                 reasoning = reasoning_match.group(1).strip()
+                # Remove reasoning from full_answer, but be careful with complex replacements
                 full_answer = full_answer.replace(reasoning_match.group(0), '').strip()
 
             # Extract answer
             answer_match = re.search(r'<answer>([\s\S]*?)</answer>', full_answer)
             if answer_match:
                 answer = answer_match.group(1).strip()
+                # Remove answer from full_answer, but be careful with complex replacements
                 full_answer = full_answer.replace(answer_match.group(0), '').strip()
             else:
                 # No <answer> tags, use split logic
@@ -587,10 +569,14 @@ async def chat_stream(
                 else:
                     answer = full_answer
 
-            # Extract references if not already done
+            # Extract references if not already done, using the remaining part of full_answer
             if not references and '---' in full_answer:
                 parts = full_answer.split('---')
                 references = parts[1].strip() if len(parts) > 1 else ''
+            
+            # Clean up answer if it somehow still contains tags or references
+            if not answer and full_answer:
+                 answer = full_answer.strip()
 
             # Stream reasoning (Chain-of-Thought thinking steps)
             if reasoning:
@@ -608,7 +594,6 @@ async def chat_stream(
             yield f"data: {json.dumps({'type': 'answer_start'})}\n\n"
 
             # Stream answer character by character for more real-time feel
-            # This simulates token-level streaming
             for char in answer:
                 await asyncio.sleep(0.01)  # Fast character streaming
                 yield f"data: {json.dumps({'type': 'answer', 'content': char})}\n\n"
@@ -635,6 +620,9 @@ async def chat_stream(
 
         except Exception as e:
             error_msg = f"Error: {str(e)}"
+            print(f"[STREAMING ERROR] {error_msg}")
+            import traceback
+            traceback.print_exc()
             yield f"data: {json.dumps({'type': 'error', 'content': error_msg})}\n\n"
 
     return StreamingResponse(generate(), media_type="text/event-stream")
@@ -650,6 +638,7 @@ if __name__ == "__main__":
     print("\nPress Ctrl+C to stop the server")
     print("="*80 + "\n")
 
+    # Use reload=True for development. Removed for cleaner final script.
     uvicorn.run(
         app,
         host="0.0.0.0",
