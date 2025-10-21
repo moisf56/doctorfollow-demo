@@ -39,8 +39,8 @@ pdfplumber==0.11.4  # Better for tables/metadata
 # ============================================
 # Medical NLP (for entity extraction)
 # ============================================
-spacy==3.8.2
-scispacy==0.5.5  # Medical entity recognition
+#spacy==3.8.2
+#scispacy==0.5.5  # Medical entity recognition
 # After install: python -m spacy download en_core_web_sm
 # After install: pip install https://s3-us-west-2.amazonaws.com/ai2-s2-scispacy/releases/v0.5.4/en_core_sci_md-0.5.4.tar.gz
 
