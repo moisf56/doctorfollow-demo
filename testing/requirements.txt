@@ -1,28 +1,56 @@
-# FastAPI and server dependencies
-fastapi==0.109.0
-uvicorn==0.27.0
-pydantic==2.5.3
-pydantic-settings==2.2.1
+# DoctorFollow Medical RAG - Minimal Dependencies for Deployment
+# Only includes packages actually used by api_server.py and rag_v3.py
 
-# Core RAG dependencies
-langgraph==0.0.20
-langchain-core==0.1.10
+# ============================================
+# Core LangChain & LangGraph
+# ============================================
+langchain==0.3.7
+langchain-core==0.3.15
+langchain-community==0.3.5
+langgraph==0.2.45
 langchain-aws==1.0.0
-langchain-community==0.0.30
-langchain-text-splitters==0.0.1
+# ============================================
+# Database Drivers
+# ============================================
+# PostgreSQL + pgvector
+psycopg2-binary==2.9.10
+pgvector==0.3.5
 
-# Data stores
-opensearch-py==2.4.2
-psycopg2-binary==2.9.9
-neo4j==5.16.0
-pgvector==0.2.2
+# Neo4j (optional - can skip if not using KG)
+neo4j==5.25.0
 
-# ML/NLP
-sentence-transformers==2.2.2
+# ============================================
+# Embeddings & NLP
+# ============================================
+sentence-transformers==3.3.1
+transformers==4.46.3
+torch>=2.0.0
+
+# ============================================
+# LLM Integration
+# ============================================
+openai==1.54.4
+
+# ============================================
+# Data & Schema
+# ============================================
+pydantic==2.9.2
+pydantic-settings==2.6.1
+
+# ============================================
+# Utilities
+# ============================================
+python-dotenv==1.0.1
 numpy==1.26.4
-spacy==3.7.4
+tqdm==4.66.6
 
-# Utilities and Ingestion
-python-dotenv==1.0.0
-pypdf==4.2.0
-pyppeteer==1.0.2
+# ============================================
+# API & Web Framework
+# ============================================
+fastapi==0.115.4
+uvicorn==0.32.0
+
+# ============================================
+# Basic NLP (no scispacy/spacy needed for core app)
+# ============================================
+nltk==3.9.1
