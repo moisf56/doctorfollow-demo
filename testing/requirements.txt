@@ -1,5 +1,5 @@
-# DoctorFollow Medical Search Agent - Dependencies
-# Fresh start for iterative build
+# DoctorFollow Medical RAG - Minimal Dependencies for Deployment
+# Only includes packages actually used by api_server.py and rag_v3.py
 
 # ============================================
 # Core LangChain & LangGraph
@@ -8,19 +8,15 @@ langchain==0.3.7
 langchain-core==0.3.15
 langchain-community==0.3.5
 langgraph==0.2.45
-langchain-aws==0.2.6  # For AWS Bedrock integration
 
 # ============================================
 # Database Drivers
 # ============================================
-# OpenSearch
-opensearch-py==2.7.1
-
 # PostgreSQL + pgvector
 psycopg2-binary==2.9.10
 pgvector==0.3.5
 
-# Neo4j
+# Neo4j (optional - can skip if not using KG)
 neo4j==5.25.0
 
 # ============================================
@@ -28,27 +24,12 @@ neo4j==5.25.0
 # ============================================
 sentence-transformers==3.3.1
 transformers==4.46.3
-torch>=2.0.0  # Required for sentence-transformers
-
-# ============================================
-# PDF Processing
-# ============================================
-PyPDF2==3.0.1
-pdfplumber==0.11.4  # Better for tables/metadata
-
-# ============================================
-# Medical NLP (for entity extraction)
-# ============================================
-#spacy==3.8.2
-#scispacy==0.5.5  # Medical entity recognition
-# After install: python -m spacy download en_core_web_sm
-# After install: pip install https://s3-us-west-2.amazonaws.com/ai2-s2-scispacy/releases/v0.5.4/en_core_sci_md-0.5.4.tar.gz
+torch>=2.0.0
 
 # ============================================
 # LLM Integration
 # ============================================
-boto3==1.35.58  # AWS Bedrock
-openai==1.54.4  # Optional: OpenAI API fallback
+openai==1.54.4
 
 # ============================================
 # Data & Schema
@@ -61,24 +42,15 @@ pydantic-settings==2.6.1
 # ============================================
 python-dotenv==1.0.1
 numpy==1.26.4
-pandas==2.2.3
 tqdm==4.66.6
 
 # ============================================
-# Evaluation & Metrics
+# API & Web Framework
 # ============================================
-scikit-learn==1.5.2
-nltk==3.9.1
-
-# ============================================
-# API & Demo
-# ============================================
-gradio==5.5.0
 fastapi==0.115.4
 uvicorn==0.32.0
 
 # ============================================
-# Development
+# Basic NLP (no scispacy/spacy needed for core app)
 # ============================================
-pytest==8.3.3
-python-dotenv==1.0.1
+nltk==3.9.1
