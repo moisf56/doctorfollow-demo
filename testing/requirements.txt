@@ -17,7 +17,7 @@ psycopg2-binary==2.9.10
 pgvector==0.3.5
 
 # Neo4j (optional - can skip if not using KG)
-neo4j==5.25.0
+neo4j
 
 # ============================================
 # Embeddings & NLP
@@ -36,7 +36,7 @@ openai==1.54.4
 # ============================================
 pydantic==2.9.2
 pydantic-settings==2.6.1
-
+opensearch-py
 # ============================================
 # Utilities
 # ============================================
@@ -54,3 +54,5 @@ uvicorn==0.32.0
 # Basic NLP (no scispacy/spacy needed for core app)
 # ============================================
 nltk==3.9.1
+##missing
+pathlib
