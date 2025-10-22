@@ -31,8 +31,8 @@ class Settings(BaseSettings):
     POSTGRES_PASSWORD: str = "follow123"
     PGVECTOR_TABLE: str = "embeddings"
 
-    # Neo4j
-    NEO4J_URI: str = "neo4j+s://52dba6f2.databases.neo4j.io"
+    # Neo4j (use neo4j+ssc:// for self-signed certificates in Aura)
+    NEO4J_URI: str = "neo4j+ssc://52dba6f2.databases.neo4j.io"
     NEO4J_USER: str = "neo4j"
     NEO4J_PASSWORD: str = "KRFRRHmIMvw1lcg-MEjWDEtGfHlw8oOX6GvHWKJba3o"
 
@@ -73,7 +73,10 @@ class Settings(BaseSettings):
 
     def get_postgres_url(self) -> str:
         """Get PostgreSQL connection string - prioritizes POSTGRES_URL if set"""
-        return f"postgresql://doctorfollow:fEiNKFInvP7BTjqqt8fTCt33kg89mov7@dpg-d3ronf9r0fns73drk2bg-a.oregon-postgres.render.com/doctorfollow"
+        if self.POSTGRES_URL:
+            return self.POSTGRES_URL
+        # Fallback to individual components
+        return f"postgresql://{self.POSTGRES_USER}:{self.POSTGRES_PASSWORD}@{self.POSTGRES_HOST}:{self.POSTGRES_PORT}/{self.POSTGRES_DB}"
 
 
 # Global settings instance

@@ -52,13 +52,13 @@ services:
       - key: ES_API_KEY
         sync: false
       - key: ES_INDEX_NAME
-        value: medical_chunks
+        value: doctor_follow_medical_chunks
 
-      # Embedding Configuration
+      # Embedding Configuration (IMPORTANT: Must match your indexed embeddings!)
       - key: EMBEDDING_MODEL
-        value: intfloat/multilingual-e5-large
+        value: intfloat/multilingual-e5-small
       - key: EMBEDDING_DIMENSION
-        value: 1024
+        value: 384
 
       # RAG Parameters
       - key: CHUNK_SIZE

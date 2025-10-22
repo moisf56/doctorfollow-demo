@@ -135,6 +135,7 @@ class Source(BaseModel):
     chunk_id: str
     text: str
     page_number: int
+    snippet: Optional[str] = None  # Short preview (first 150 chars)
     rrf_score: Optional[float] = None
     bm25_score: Optional[float] = None
     semantic_score: Optional[float] = None
@@ -433,18 +434,27 @@ async def chat(
             # Medical query - use RAG pipeline with language and complexity
             result = rag_system.ask(request.query, language=language, complexity=complexity)
 
-            # Convert sources to response model
-            sources = [
-                Source(
+            # Convert sources to response model with snippets
+            sources = []
+            for src in result["sources"]:
+                # Create a clean snippet (first 150 chars, clean whitespace)
+                text = src["text"]
+                snippet = text[:150].strip()
+                # Clean up whitespace
+                snippet = ' '.join(snippet.split())
+                if len(text) > 150:
+                    snippet += "..."
+
+                sources.append(Source(
                     chunk_id=src["chunk_id"],
                     text=src["text"],
                     page_number=src["page_number"],
+                    snippet=snippet,
                     rrf_score=src.get("rrf_score"),
                     bm25_score=src.get("bm25_score"),
                     semantic_score=src.get("semantic_score")
-                )
-                for src in result["sources"]
-            ]
+                ))
+
 
             response = ChatResponse(
                 query=result["query"],
@@ -600,15 +610,23 @@ async def chat_stream(
             if references:
                 yield f"data: {json.dumps({'type': 'references', 'content': references})}\n\n"
 
-            # Send sources
-            sources_data = [
-                {
+            # Send sources with snippets
+            sources_data = []
+            for src in result['sources']:
+                # Create snippet
+                text = src['text']
+                snippet = text[:150].strip()
+                snippet = ' '.join(snippet.split())
+                if len(text) > 150:
+                    snippet += "..."
+
+                sources_data.append({
                     'chunk_id': src['chunk_id'],
                     'text': src['text'],
+                    'snippet': snippet,
                     'page_number': src['page_number']
-                }
-                for src in result['sources']
-            ]
+                })
+
             yield f"data: {json.dumps({'type': 'sources', 'data': sources_data})}\n\n"
 
             # Done
