@@ -10,7 +10,6 @@ services:
       cd iteration_3
       pip install --upgrade pip
       pip install -r ../requirements.txt
-      python -m spacy download en_core_web_sm
     startCommand: |
       cd iteration_3
       python api_server.py
@@ -67,6 +66,14 @@ services:
         value: neo4j
       - key: NEO4J_PASSWORD
         sync: false
+
+      # Elasticsearch/OpenSearch - SET THESE MANUALLY FOR ELASTIC CLOUD
+      - key: ES_URL
+        sync: false
+      - key: ES_API_KEY
+        sync: false
+      - key: ES_INDEX_NAME
+        value: medical_chunks
 
       # Embedding Configuration
       - key: EMBEDDING_MODEL
