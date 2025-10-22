@@ -45,52 +45,36 @@ class Neo4jStore:
         Initialize Neo4j connection with SSL/TLS support for Neo4j Aura
 
         Args:
-            uri: Neo4j URI (e.g., neo4j+s://xxxxx.databases.neo4j.io for Aura)
+            uri: Neo4j URI
+                - neo4j+s://xxxxx.databases.neo4j.io (for full certificate verification)
+                - neo4j+ssc://xxxxx.databases.neo4j.io (for self-signed certificates)
             user: Neo4j username
             password: Neo4j password
         """
-        # For Neo4j Aura, use neo4j+s:// scheme which handles SSL automatically
-        # Create driver with certificate verification disabled for self-signed certs
+        # For Neo4j Aura, use neo4j+ssc:// scheme for self-signed certificates
+        # The scheme handles encryption automatically - no SSL config needed
+
         try:
-            # Import neo4j's TrustStrategy
-            from neo4j import TrustSystemCAs, TrustAll
-
-            # Try with system CAs first (recommended for Aura)
-            try:
-                self.driver = GraphDatabase.driver(
-                    uri,
-                    auth=(user, password),
-                    trusted_certificates=TrustSystemCAs()
-                )
-                print(f"[OK] Connected to Neo4j at {uri} with system CA certificates")
-            except Exception as e1:
-                print(f"[WARN] System CA failed: {e1}")
-                # Fallback: Trust all certificates (works for self-signed)
-                self.driver = GraphDatabase.driver(
-                    uri,
-                    auth=(user, password),
-                    trusted_certificates=TrustAll()
-                )
-                print(f"[OK] Connected to Neo4j at {uri} (trusting all certificates)")
-
-        except ImportError:
-            # Older neo4j driver version - use different approach
-            print("[INFO] Using legacy Neo4j driver configuration")
-            import certifi
-            import ssl
-
-            # Create SSL context
-            ssl_context = ssl.create_default_context(cafile=certifi.where())
-            ssl_context.check_hostname = False
-            ssl_context.verify_mode = ssl.CERT_NONE
-
+            # Simple connection - scheme handles SSL automatically
             self.driver = GraphDatabase.driver(
                 uri,
                 auth=(user, password)
             )
-            print(f"[OK] Connected to Neo4j at {uri} (legacy SSL config)")
+            print(f"[OK] Connected to Neo4j at {uri}")
+
+            # Verify connection with a simple query
+            with self.driver.session() as session:
+                session.run("RETURN 1")
+            print(f"[OK] Neo4j connection verified")
+
         except Exception as e:
             print(f"[ERROR] Neo4j connection failed: {e}")
+            print(f"[INFO] URI: {uri}")
+            print(f"[INFO] Make sure:")
+            print(f"       1. URI uses 'neo4j+ssc://' scheme (for Aura with self-signed certs)")
+            print(f"       2. Credentials are correct")
+            print(f"       3. Neo4j instance is running")
+            print(f"       4. Network/firewall allows connection")
             raise
 
         # Create constraints and indexes
