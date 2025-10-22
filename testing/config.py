@@ -73,9 +73,7 @@ class Settings(BaseSettings):
 
     def get_postgres_url(self) -> str:
         """Get PostgreSQL connection string - prioritizes POSTGRES_URL if set"""
-        if self.POSTGRES_URL:
-            return self.POSTGRES_URL
-        return f"postgresql://{self.POSTGRES_USER}:{self.POSTGRES_PASSWORD}@{self.POSTGRES_HOST}:{self.POSTGRES_PORT}/{self.POSTGRES_DB}"
+        return f"postgresql://doctorfollow:fEiNKFInvP7BTjqqt8fTCt33kg89mov7@dpg-d3ronf9r0fns73drk2bg-a.oregon-postgres.render.com/doctorfollow"
 
 
 # Global settings instance

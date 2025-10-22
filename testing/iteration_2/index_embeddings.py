@@ -88,7 +88,7 @@ def main():
     print(f"[INFO] This will take a few minutes (generating {len(chunks)} embeddings)...")
     print()
 
-    result = pgvector_store.index_chunks(chunks, batch_size=32)
+    result = pgvector_store.index_chunks(chunks)
 
     print()
     print("="*70)
