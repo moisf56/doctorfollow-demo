@@ -43,7 +43,8 @@ elasticsearch>=8.0.0
 # Sentence transformers for multilingual embeddings
 sentence-transformers==3.3.1
 transformers==4.46.3
-torch>=2.0.0
+# PyTorch CPU-only version installed via build command (see render.yaml)
+# torch>=2.0.0  # Commented out - installed separately to use CPU-only version
 tokenizers>=0.20.0
 
 # Basic NLP utilities

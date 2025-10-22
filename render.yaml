@@ -9,6 +9,9 @@ services:
     buildCommand: |
       cd iteration_3
       pip install --upgrade pip
+      # Install CPU-only PyTorch first (much smaller - ~200MB vs ~2GB)
+      pip install torch==2.5.1+cpu --index-url https://download.pytorch.org/whl/cpu
+      # Install other requirements
       pip install -r ../requirements.txt
     startCommand: |
       cd iteration_3
@@ -73,5 +76,13 @@ services:
         value: 5
       - key: RRF_K
         value: 60
+
+      # Memory Optimization (for free tier)
+      - key: PYTORCH_CUDA_ALLOC_CONF
+        value: max_split_size_mb:128
+      - key: TRANSFORMERS_OFFLINE
+        value: "0"
+      - key: TOKENIZERS_PARALLELISM
+        value: "false"
 
 # No databases section - using existing database
