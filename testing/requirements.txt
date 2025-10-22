@@ -40,10 +40,10 @@ elasticsearch>=8.0.0
 # ============================================
 # Embeddings & NLP Models
 # ============================================
-# Using CPU-only PyTorch + multilingual-e5-small (~280MB total)
-# This fits within Render free tier (512MB limit)
-sentence-transformers==3.3.1
-# torch will be installed via build command (CPU-only version)
+# Using Jina AI Embeddings API instead of local models to save memory
+# This reduces memory from ~600MB to ~200MB for Render free tier (512MB limit)
+# sentence-transformers and torch removed - using Jina AI API for embeddings
+# Note: For local indexing with sentence-transformers, install separately
 tokenizers>=0.20.0
 
 # Basic NLP utilities
