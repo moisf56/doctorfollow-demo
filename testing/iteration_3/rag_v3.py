@@ -117,7 +117,8 @@ class MedicalRAGv3:
             connection_string=postgres_url,
             table_name=settings.PGVECTOR_TABLE,
             embedding_model=settings.EMBEDDING_MODEL,
-            embedding_dimension=settings.EMBEDDING_DIMENSION
+            embedding_dimension=settings.EMBEDDING_DIMENSION,
+            load_model=False  # Use HF API instead of loading model (saves ~600MB RAM)
         )
 
         print("[Loading] Neo4j (Knowledge Graph)...")

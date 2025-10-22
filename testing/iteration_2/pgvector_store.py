@@ -8,7 +8,17 @@ import psycopg2
 from psycopg2.extras import execute_values
 from dataclasses import dataclass
 import numpy as np
-from sentence_transformers import SentenceTransformer
+import os
+import time
+import requests
+
+# Optional: Load sentence-transformers if available (for backward compatibility)
+try:
+    from sentence_transformers import SentenceTransformer
+    HAS_SENTENCE_TRANSFORMERS = True
+except ImportError:
+    HAS_SENTENCE_TRANSFORMERS = False
+    print("[INFO] sentence-transformers not installed, will use Hugging Face API")
 
 @dataclass
 class SearchResult:
@@ -33,39 +43,98 @@ class PgVectorStore:
     """
     
     def __init__(
-        self, 
+        self,
         connection_string: str,
         table_name: str = "medical_embeddings",
         embedding_model: str = "sentence-transformers/all-MiniLM-L6-v2",
-        embedding_dimension: int = 384
+        embedding_dimension: int = 384,
+        load_model: bool = False  # NEW: Don't load model by default (use HF API)
     ):
         """
         Initialize pgvector store
-        
+
         Args:
             connection_string: PostgreSQL connection string
             table_name: Name of the table to store embeddings
             embedding_model: Sentence transformer model name
             embedding_dimension: Dimension of embeddings (384 for MiniLM-L6-v2)
+            load_model: If True, load model locally. If False, use HF API (saves memory!)
         """
         self.table_name = table_name
         self.embedding_dimension = embedding_dimension
-        
+        self.embedding_model = embedding_model
+
         # Connect to PostgreSQL
         self.conn = psycopg2.connect(connection_string)
         self.conn.autocommit = False
-        
+
         # Create vector extension if it doesn't exist
         self._create_vector_extension()
-        
+
         # Create table with vector column
         self._create_table()
-        
-        # Load embedding model
-        print(f"[Loading] Embedding model: {embedding_model}...")
-        self.model = SentenceTransformer(embedding_model)
-        print(f"[OK] Embedding model loaded (dimension: {embedding_dimension})")
-    
+
+        # Optionally load embedding model locally (memory intensive!)
+        self.model = None
+        if load_model and HAS_SENTENCE_TRANSFORMERS:
+            print(f"[Loading] Embedding model locally: {embedding_model}...")
+            self.model = SentenceTransformer(embedding_model)
+            print(f"[OK] Embedding model loaded (dimension: {embedding_dimension})")
+        else:
+            print(f"[INFO] Using Hugging Face API for embeddings (saves ~400MB RAM)")
+            print(f"[INFO] Model: {embedding_model}")
+
+    def _encode_via_hf_api(self, text: str, retry: int = 3) -> np.ndarray:
+        """
+        Use Hugging Face Inference API for embeddings
+
+        Args:
+            text: Text to encode
+            retry: Number of retry attempts
+
+        Returns:
+            Embedding vector as numpy array
+        """
+        # For multilingual-e5-small, add "query: " prefix for search queries
+        # (This improves retrieval performance per model documentation)
+        if not text.startswith("query: "):
+            text = f"query: {text}"
+
+        API_URL = f"https://api-inference.huggingface.co/pipeline/feature-extraction/{self.embedding_model}"
+        headers = {}
+
+        # Use API key if available (higher rate limits)
+        hf_token = os.getenv("HUGGINGFACE_TOKEN")
+        if hf_token:
+            headers["Authorization"] = f"Bearer {hf_token}"
+
+        for attempt in range(retry):
+            try:
+                response = requests.post(API_URL, headers=headers, json={"inputs": text})
+
+                if response.status_code == 200:
+                    # API returns array of embeddings, take first one
+                    embedding = np.array(response.json()[0])
+                    return embedding
+
+                elif response.status_code == 503:
+                    # Model is loading, wait and retry
+                    wait_time = 2 ** attempt
+                    print(f"[INFO] Model loading, waiting {wait_time}s...")
+                    time.sleep(wait_time)
+                    continue
+
+                else:
+                    raise Exception(f"HF API error: {response.status_code} - {response.text}")
+
+            except requests.exceptions.RequestException as e:
+                if attempt == retry - 1:
+                    raise Exception(f"Failed to connect to HF API: {e}")
+                print(f"[WARN] API request failed (attempt {attempt + 1}/{retry}), retrying...")
+                time.sleep(1)
+
+        raise Exception("Failed to get embedding from HF API after retries")
+
     def _create_vector_extension(self):
         """Create pgvector extension if it doesn't exist"""
         with self.conn.cursor() as cur:
@@ -128,16 +197,24 @@ class PgVectorStore:
     def index_chunks(self, chunks: List[Dict[str, Any]]) -> Dict[str, Any]:
         """
         Index chunks with embeddings
-        
+
         Args:
             chunks: List of chunk dictionaries with text and metadata
-        
+
         Returns:
             Statistics about indexing
         """
         if not chunks:
             return {"error": "No chunks provided"}
-        
+
+        # Check if model is loaded (required for bulk indexing)
+        if not self.model:
+            raise ValueError(
+                "Cannot index chunks without local model loaded. "
+                "Initialize with load_model=True for indexing operations. "
+                "HF API is only suitable for single query encoding (search operations)."
+            )
+
         # Generate embeddings
         texts = [chunk["text"] for chunk in chunks]
         print(f"[Embedding] Generating embeddings for {len(texts)} chunks...")
@@ -218,17 +295,22 @@ class PgVectorStore:
     ) -> List[SearchResult]:
         """
         Semantic search using cosine similarity
-        
+
         Args:
             query: Search query (Turkish or English)
             top_k: Number of results to return
             filters: Optional filters (e.g., {"page_number": 5})
-        
+
         Returns:
             List of SearchResult objects sorted by similarity
         """
         # Generate query embedding
-        query_embedding = self.model.encode([query])[0]
+        if self.model:
+            # Local model (for backward compatibility)
+            query_embedding = self.model.encode([query])[0]
+        else:
+            # Hugging Face API (saves memory!)
+            query_embedding = self._encode_via_hf_api(query)
         
         # Build WHERE clause for filters
         where_clause = ""
