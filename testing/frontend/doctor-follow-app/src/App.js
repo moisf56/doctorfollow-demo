@@ -329,7 +329,7 @@ const DoctorFollowChat = ({ authCredentials, username, onLogout }) => {
                     msg.references = event.content;
                     break;
                   case 'sources':
-                    msg.sources = event.content || [];
+                    msg.sources = event.data || [];
                     break;
                   case 'done':
                     msg.isStreaming = false;
@@ -469,6 +469,7 @@ const DoctorFollowChat = ({ authCredentials, username, onLogout }) => {
     const hasReasoning = message.content.includes('<reasoning>');
     const reasoning = hasReasoning ? message.content.match(/<reasoning>(.*?)<\/reasoning>/s)?.[1] : null;
     const answer = message.content.match(/<answer>(.*?)<\/answer>/s)?.[1] || message.content;
+    const hasSources = message.sources && message.sources.length > 0;
     const isExpanded = expandedThinking[message.id];
 
     return (
@@ -508,6 +509,20 @@ const DoctorFollowChat = ({ authCredentials, username, onLogout }) => {
             {answer.replace(/<[^>]*>/g, '')}
           </p>
         </div>
+
+        {hasSources && (
+          <div className="border-t border-gray-700 pt-3 mt-3">
+            <p className="text-xs font-semibold text-gray-400 mb-2">REFERENCES</p>
+            <div className="space-y-2">
+              {message.sources.slice(0, 3).map((source, idx) => (
+                <div key={idx} className="text-xs text-gray-400 bg-gray-800/50 rounded p-2">
+                  <p className="font-medium text-purple-300">Source {idx + 1} - Page {source.page_number}</p>
+                  <p className="mt-1 line-clamp-2">{source.text}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
     );
   };

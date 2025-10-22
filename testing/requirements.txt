@@ -1,59 +1,80 @@
-# DoctorFollow Medical RAG - Minimal Dependencies for Deployment
-# Only includes packages actually used by api_server.py and rag_v3.py
+# ============================================
+# DoctorFollow Medical RAG - Production Dependencies for Render.com
+# Optimized for api_server.py and rag_v3.py deployment
+# Python 3.10+ recommended
+# ============================================
 
 # ============================================
-# Core LangChain & LangGraph
+# Core LangChain & LangGraph Framework
 # ============================================
-langchain
-langchain-core
-langchain-community
-langgraph
-langchain-aws
-# ============================================
-# Database Drivers
-# ============================================
-# PostgreSQL + pgvector
-psycopg2-binary==2.9.10
-pgvector==0.3.5
-
-# Neo4j (optional - can skip if not using KG)
-neo4j
+langchain>=0.3.0
+langchain-core>=0.3.0
+langchain-community>=0.3.0
+langgraph>=0.2.0
 
 # ============================================
-# Embeddings & NLP
+# LLM Providers
 # ============================================
-sentence-transformers==3.3.1
-transformers==4.46.3
-torch>=2.0.0
+# AWS Bedrock integration
+langchain-aws>=0.2.0
+boto3>=1.35.0
+botocore>=1.35.0
 
-# ============================================
-# LLM Integration
-# ============================================
+# OpenAI (alternative LLM provider)
+langchain-openai>=0.2.0
 openai==1.54.4
 
 # ============================================
-# Data & Schema
+# Database Drivers
+# ============================================
+# PostgreSQL + pgvector for semantic search
+psycopg2-binary==2.9.10
+pgvector==0.3.5
+
+# Neo4j for knowledge graph
+neo4j>=5.0.0
+
+# Elasticsearch for BM25 retrieval
+elasticsearch>=8.0.0
+
+# ============================================
+# Embeddings & NLP Models
+# ============================================
+# Sentence transformers for multilingual embeddings
+sentence-transformers==3.3.1
+transformers==4.46.3
+torch>=2.0.0
+tokenizers>=0.20.0
+
+# Basic NLP utilities
+nltk==3.9.1
+
+# ============================================
+# Web Framework & API
+# ============================================
+fastapi==0.115.4
+uvicorn[standard]==0.32.0
+python-multipart>=0.0.9
+
+# ============================================
+# Data Validation & Settings
 # ============================================
 pydantic==2.9.2
 pydantic-settings==2.6.1
-opensearch-py
+
 # ============================================
 # Utilities
 # ============================================
 python-dotenv==1.0.1
 numpy==1.26.4
-tqdm==4.66.6
 
 # ============================================
-# API & Web Framework
+# Security (for HTTP Basic Auth)
 # ============================================
-fastapi==0.115.4
-uvicorn==0.32.0
+passlib>=1.7.4
 
 # ============================================
-# Basic NLP (no scispacy/spacy needed for core app)
+# HTTP Client (for health checks and external APIs)
 # ============================================
-nltk==3.9.1
-##missing
-pathlib
-elasticsearch
+httpx>=0.27.0
+requests>=2.32.0
