@@ -508,7 +508,13 @@ class MedicalKGBuilder:
 
 if __name__ == "__main__":
     print("=== Medical Knowledge Graph Builder ===\n")
-
+    import os
+    from dotenv import load_dotenv
+    
+    # env
+    print("=== downloading env variables ===\n")
+    
+    load_dotenv()
     # Initialize stores - use environment variables
     print("[Loading] ElasticSearch...")
     opensearch = ElasticsearchStore()  # No parameters - uses ENV
