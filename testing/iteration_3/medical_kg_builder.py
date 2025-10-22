@@ -14,7 +14,7 @@ sys.path.append(str(Path(__file__).parent.parent / "iteration_1"))
 sys.path.append(str(Path(__file__).parent))
 
 from config import settings
-from iteration_1.opensearch_store import OpenSearchStore
+from iteration_1.opensearch_store import ElasticsearchStore
 from neo4j_store import Neo4jStore, Entity, Relationship
 
 
@@ -28,7 +28,7 @@ class MedicalKGBuilder:
     3. Populate Neo4j graph
     """
 
-    def __init__(self, opensearch_store: OpenSearchStore, neo4j_store: Neo4jStore):
+    def __init__(self, opensearch_store: ElasticsearchStore, neo4j_store: Neo4jStore):
         """
         Initialize KG builder
 
@@ -506,17 +506,12 @@ class MedicalKGBuilder:
             if count > 0:
                 print(f"  {label}: {count}")
 
-
 if __name__ == "__main__":
     print("=== Medical Knowledge Graph Builder ===\n")
 
-    # Initialize stores
-    print("[Loading] OpenSearch...")
-    opensearch = OpenSearchStore(
-        host=settings.OPENSEARCH_HOST,
-        port=settings.OPENSEARCH_PORT,
-        index_name=settings.OPENSEARCH_INDEX
-    )
+    # Initialize stores - use environment variables
+    print("[Loading] ElasticSearch...")
+    opensearch = ElasticsearchStore()  # No parameters - uses ENV
 
     print("[Loading] Neo4j...")
     neo4j = Neo4jStore(
@@ -531,7 +526,7 @@ if __name__ == "__main__":
 
     # Build KG
     builder = MedicalKGBuilder(opensearch, neo4j)
-    builder.build_graph(limit_chunks=500)  # Process 500 chunks for speed
+    builder.build_graph(limit_chunks=500)
 
     # Cleanup
     opensearch.close()

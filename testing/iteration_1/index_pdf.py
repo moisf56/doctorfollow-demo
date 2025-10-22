@@ -1,22 +1,24 @@
 """
-Index Pediatrics PDF into OpenSearch
-Combines LangChain ingestion + OpenSearch indexing
+Index Pediatrics PDF into Elasticsearch (Elastic Cloud)
+Combines LangChain ingestion + Elasticsearch indexing
+Updated to use environment variables for cloud deployment
 """
 from pathlib import Path
 import sys
+import os   
 
 # Add parent directory to path for imports
 sys.path.append(str(Path(__file__).parent))
 
 from pdf_ingestion import MedicalPDFIngestion
-from opensearch_store import OpenSearchStore
+from opensearch_store import ElasticsearchStore
 
 
 def index_pediatrics_pdf():
-    """Index the Nelson Pediatrics PDF into OpenSearch"""
+    """Index the Nelson Pediatrics PDF into Elasticsearch Cloud"""
 
     print("="*70)
-    print("INDEXING PEDIATRICS PDF TO OPENSEARCH")
+    print("INDEXING PEDIATRICS PDF TO ELASTICSEARCH CLOUD")
     print("="*70)
 
     # Paths
@@ -38,16 +40,20 @@ def index_pediatrics_pdf():
 
     print(f"[OK] Created {len(chunks)} chunks")
 
-    # Step 2: Connect to OpenSearch
-    print(f"\n[STEP 2] Connecting to OpenSearch...")
-    store = OpenSearchStore(
-        host="localhost",
-        port=9200,
-        index_name="medical_chunks"
-    )
+    # Step 2: Connect to Elasticsearch (uses environment variables)
+    print(f"\n[STEP 2] Connecting to Elasticsearch Cloud...")
+    try:
+        store = ElasticsearchStore()  # Now uses ES_URL, ES_API_KEY from environment
+    except EnvironmentError as e:
+        print(f"[ERROR] {e}")
+        print("\n[INFO] Make sure these environment variables are set:")
+        print("  - ES_URL=https://your-elastic-cloud.es.io:443")
+        print("  - ES_API_KEY=your_api_key")
+        print("  - ES_INDEX_NAME=doctor_follow_medical_chunks (optional)")
+        return False
 
     # Step 3: Index chunks
-    print(f"\n[STEP 3] Indexing {len(chunks)} chunks to OpenSearch...")
+    print(f"\n[STEP 3] Indexing {len(chunks)} chunks to Elasticsearch...")
     result = store.index_chunks(chunks)
 
     if result.get('error'):
@@ -59,8 +65,12 @@ def index_pediatrics_pdf():
     # Step 4: Verify
     print(f"\n[STEP 4] Verifying index...")
     stats = store.get_stats()
-    print(f"  Total documents: {stats['total_documents']}")
-    print(f"  Index size: {stats['index_size_bytes'] / 1024:.2f} KB")
+    if stats.get('exists'):
+        print(f"  Total documents: {stats['total_documents']}")
+        print(f"  Index size: {stats['index_size_bytes'] / 1024:.2f} KB")
+        print(f"  Index name: {stats['index_name']}")
+    else:
+        print(f"[WARN] Could not retrieve stats: {stats.get('error', 'Unknown error')}")
 
     # Step 5: Test search
     print(f"\n[STEP 5] Testing search with sample queries...")
@@ -73,10 +83,14 @@ def index_pediatrics_pdf():
 
     for query in test_queries:
         results = store.search(query, top_k=3)
-        print(f"\n  Query: '{query}'")
-        print(f"  Top result score: {results[0].score:.3f}")
-        print(f"  Top result page: {results[0].page_number}")
-        print(f"  Preview: {results[0].text[:100]}...")
+        if results:
+            print(f"\n  Query: '{query}'")
+            print(f"  Top result score: {results[0].score:.3f}")
+            print(f"  Top result page: {results[0].page_number}")
+            print(f"  Preview: {results[0].text[:100]}...")
+        else:
+            print(f"\n  Query: '{query}'")
+            print(f"  No results found")
 
     store.close()
 
@@ -84,11 +98,17 @@ def index_pediatrics_pdf():
     print("INDEXING COMPLETE!")
     print("="*70)
     print(f"\n[INFO] You can now query the index with Turkish queries!")
-    print(f"[INFO] Ready to build RAG v1 with AWS Bedrock LLM\n")
+    print(f"[INFO] Ready to build RAG v1 with LLM\n")
 
     return True
 
 
 if __name__ == "__main__":
+    import os
+    from dotenv import load_dotenv
+
+    print("=== index Store  ===\n")
+    
+    load_dotenv()
     success = index_pediatrics_pdf()
     sys.exit(0 if success else 1)
