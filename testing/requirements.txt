@@ -67,9 +67,10 @@ pydantic-settings==2.6.1
 # ============================================
 python-dotenv==1.0.1
 numpy==1.26.4
+certifi>=2024.0.0
 
 # ============================================
-# Security (for HTTP Basic Auth)
+# Security (for HTTP Basic Auth & SSL)
 # ============================================
 passlib>=1.7.4
 

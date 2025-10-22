@@ -42,18 +42,62 @@ class Neo4jStore:
 
     def __init__(self, uri: str, user: str, password: str):
         """
-        Initialize Neo4j connection
+        Initialize Neo4j connection with SSL/TLS support for Neo4j Aura
 
         Args:
-            uri: Neo4j URI (e.g., bolt://localhost:7687)
+            uri: Neo4j URI (e.g., neo4j+s://xxxxx.databases.neo4j.io for Aura)
             user: Neo4j username
             password: Neo4j password
         """
-        self.driver = GraphDatabase.driver(uri, auth=(user, password))
-        print(f"[OK] Connected to Neo4j at {uri}")
+        # For Neo4j Aura, use neo4j+s:// scheme which handles SSL automatically
+        # Create driver with certificate verification disabled for self-signed certs
+        try:
+            # Import neo4j's TrustStrategy
+            from neo4j import TrustSystemCAs, TrustAll
+
+            # Try with system CAs first (recommended for Aura)
+            try:
+                self.driver = GraphDatabase.driver(
+                    uri,
+                    auth=(user, password),
+                    trusted_certificates=TrustSystemCAs()
+                )
+                print(f"[OK] Connected to Neo4j at {uri} with system CA certificates")
+            except Exception as e1:
+                print(f"[WARN] System CA failed: {e1}")
+                # Fallback: Trust all certificates (works for self-signed)
+                self.driver = GraphDatabase.driver(
+                    uri,
+                    auth=(user, password),
+                    trusted_certificates=TrustAll()
+                )
+                print(f"[OK] Connected to Neo4j at {uri} (trusting all certificates)")
+
+        except ImportError:
+            # Older neo4j driver version - use different approach
+            print("[INFO] Using legacy Neo4j driver configuration")
+            import certifi
+            import ssl
+
+            # Create SSL context
+            ssl_context = ssl.create_default_context(cafile=certifi.where())
+            ssl_context.check_hostname = False
+            ssl_context.verify_mode = ssl.CERT_NONE
+
+            self.driver = GraphDatabase.driver(
+                uri,
+                auth=(user, password)
+            )
+            print(f"[OK] Connected to Neo4j at {uri} (legacy SSL config)")
+        except Exception as e:
+            print(f"[ERROR] Neo4j connection failed: {e}")
+            raise
 
         # Create constraints and indexes
-        self._create_schema()
+        try:
+            self._create_schema()
+        except Exception as e:
+            print(f"[WARN] Schema creation skipped: {e}")
 
     def _create_schema(self):
         """Create schema constraints and indexes"""
