@@ -9,6 +9,9 @@ services:
     buildCommand: |
       cd iteration_3
       pip install --upgrade pip
+      # Install CPU-only PyTorch first (saves ~1.5GB vs CUDA version)
+      pip install torch==2.5.1+cpu --index-url https://download.pytorch.org/whl/cpu
+      # Install other requirements
       pip install -r ../requirements.txt
     startCommand: |
       cd iteration_3
@@ -54,9 +57,9 @@ services:
       - key: ES_INDEX_NAME
         value: doctor_follow_medical_chunks
 
-      # Hugging Face (optional - for higher rate limits)
-      - key: HUGGINGFACE_TOKEN
-        sync: false  # Optional: Get from https://huggingface.co/settings/tokens
+      # Jina AI Embeddings API (FREE: 1M tokens/month)
+      - key: JINA_API_KEY
+        sync: false  # Required: Get from https://jina.ai/embeddings/
 
       # Embedding Configuration (IMPORTANT: Must match your indexed embeddings!)
       - key: EMBEDDING_MODEL

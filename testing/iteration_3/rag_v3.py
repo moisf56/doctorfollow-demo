@@ -118,7 +118,7 @@ class MedicalRAGv3:
             table_name=settings.PGVECTOR_TABLE,
             embedding_model=settings.EMBEDDING_MODEL,
             embedding_dimension=settings.EMBEDDING_DIMENSION,
-            load_model=False  # Use HF API instead of loading model (saves ~600MB RAM)
+            load_model=True  # Load model locally (multilingual-e5-small is small: ~280MB total)
         )
 
         print("[Loading] Neo4j (Knowledge Graph)...")

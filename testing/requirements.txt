@@ -40,10 +40,10 @@ elasticsearch>=8.0.0
 # ============================================
 # Embeddings & NLP Models
 # ============================================
-# Using Hugging Face Inference API instead of local models to save memory
-# This reduces memory usage from ~800MB to ~200MB for Render free tier (512MB limit)
-# sentence-transformers and torch removed - using HF API for embeddings
-# For indexing operations, use local environment with full dependencies
+# Using CPU-only PyTorch + multilingual-e5-small (~280MB total)
+# This fits within Render free tier (512MB limit)
+sentence-transformers==3.3.1
+# torch will be installed via build command (CPU-only version)
 tokenizers>=0.20.0
 
 # Basic NLP utilities

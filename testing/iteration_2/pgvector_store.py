@@ -81,12 +81,13 @@ class PgVectorStore:
             self.model = SentenceTransformer(embedding_model)
             print(f"[OK] Embedding model loaded (dimension: {embedding_dimension})")
         else:
-            print(f"[INFO] Using Hugging Face API for embeddings (saves ~400MB RAM)")
-            print(f"[INFO] Model: {embedding_model}")
+            print(f"[INFO] Using Jina AI Embeddings API (saves ~600MB RAM)")
+            print(f"[INFO] Model: jina-embeddings-v3 with {embedding_dimension}D (Matryoshka)")
+            print(f"[INFO] Free tier: 1M tokens/month")
 
-    def _encode_via_hf_api(self, text: str, retry: int = 3) -> np.ndarray:
+    def _encode_via_api(self, text: str, retry: int = 3) -> np.ndarray:
         """
-        Use Hugging Face Inference API for embeddings
+        Use Jina AI Embeddings API for embeddings (FREE tier: 1M tokens/month)
 
         Args:
             text: Text to encode
@@ -95,45 +96,63 @@ class PgVectorStore:
         Returns:
             Embedding vector as numpy array
         """
-        # For multilingual-e5-small, add "query: " prefix for search queries
-        # (This improves retrieval performance per model documentation)
-        if not text.startswith("query: "):
-            text = f"query: {text}"
+        API_URL = "https://api.jina.ai/v1/embeddings"
 
-        API_URL = f"https://api-inference.huggingface.co/pipeline/feature-extraction/{self.embedding_model}"
-        headers = {}
+        # Get Jina API key
+        jina_token = os.getenv("JINA_API_KEY")
+        if not jina_token:
+            raise ValueError(
+                "JINA_API_KEY not found in environment variables. "
+                "Get a free API key from https://jina.ai/embeddings/"
+            )
 
-        # Use API key if available (higher rate limits)
-        hf_token = os.getenv("HUGGINGFACE_TOKEN")
-        if hf_token:
-            headers["Authorization"] = f"Bearer {hf_token}"
+        headers = {
+            "Content-Type": "application/json",
+            "Authorization": f"Bearer {jina_token}"
+        }
+
+        # Use Jina's jina-embeddings-v3 model with 384 dimensions (via Matryoshka)
+        data = {
+            "input": [text],
+            "model": "jina-embeddings-v3",
+            "dimensions": self.embedding_dimension,  # 384 for compatibility
+            "task": "retrieval.query"  # Optimized for search queries
+        }
 
         for attempt in range(retry):
             try:
-                response = requests.post(API_URL, headers=headers, json={"inputs": text})
+                response = requests.post(API_URL, headers=headers, json=data)
 
                 if response.status_code == 200:
-                    # API returns array of embeddings, take first one
-                    embedding = np.array(response.json()[0])
+                    # Extract embedding from response
+                    result = response.json()
+                    embedding = np.array(result["data"][0]["embedding"])
                     return embedding
 
                 elif response.status_code == 503:
-                    # Model is loading, wait and retry
+                    # Service temporarily unavailable, retry
                     wait_time = 2 ** attempt
-                    print(f"[INFO] Model loading, waiting {wait_time}s...")
+                    print(f"[INFO] API temporarily unavailable, waiting {wait_time}s...")
+                    time.sleep(wait_time)
+                    continue
+
+                elif response.status_code == 429:
+                    # Rate limit exceeded
+                    wait_time = 5 * (attempt + 1)
+                    print(f"[WARN] Rate limit exceeded, waiting {wait_time}s...")
                     time.sleep(wait_time)
                     continue
 
                 else:
-                    raise Exception(f"HF API error: {response.status_code} - {response.text}")
+                    raise Exception(f"Jina AI API error: {response.status_code} - {response.text}")
 
             except requests.exceptions.RequestException as e:
                 if attempt == retry - 1:
-                    raise Exception(f"Failed to connect to HF API: {e}")
+                    raise Exception(f"Failed to connect to Jina AI API: {e}")
                 print(f"[WARN] API request failed (attempt {attempt + 1}/{retry}), retrying...")
                 time.sleep(1)
 
-        raise Exception("Failed to get embedding from HF API after retries")
+        raise Exception("Failed to get embedding from Jina AI API after retries")
 
     def _create_vector_extension(self):
         """Create pgvector extension if it doesn't exist"""
@@ -306,11 +325,11 @@ class PgVectorStore:
         """
         # Generate query embedding
         if self.model:
-            # Local model (for backward compatibility)
+            # Local model (for backward compatibility or indexing operations)
             query_embedding = self.model.encode([query])[0]
         else:
-            # Hugging Face API (saves memory!)
-            query_embedding = self._encode_via_hf_api(query)
+            # Jina AI API (saves ~600MB memory!)
+            query_embedding = self._encode_via_api(query)
         
         # Build WHERE clause for filters
         where_clause = ""
