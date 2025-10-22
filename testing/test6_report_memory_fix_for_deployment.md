@@ -179,17 +179,20 @@ For production, consider:
    HUGGINGFACE_TOKEN=hf_your_token_here
    ```
    Get token from: https://huggingface.co/settings/tokens
+   - Without token: ~100 requests/hour
+   - With token: ~1000 requests/hour
 
 3. **Deploy**
-   - Render will auto-deploy
-   - Build should complete without OOM
-   - App should start with ~200MB memory
+   - Render will auto-deploy from GitHub
+   - Build should complete without OOM error
+   - App should start with ~200MB memory (well under 512MB limit)
 
 4. **Verify**
    - Check `/health` endpoint
-   - Test a query
-   - First query may be slow (HF loads model)
-   - Subsequent queries should be fast
+   - Test a simple query (e.g., "What is RDS?")
+   - First query may be slow (2-5 seconds as HF loads model)
+   - Subsequent queries should be faster (~100-300ms API overhead)
+   - Monitor Render dashboard for memory usage
 
 ## Fallback Plan
 
