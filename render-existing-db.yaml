@@ -33,31 +33,10 @@ services:
       - key: OPENAI_MODEL
         value: gpt-4o-mini
 
-      # PostgreSQL - Auto-linked from database below
-      - key: DATABASE_URL
-        fromDatabase:
-          name: doctorfollow-db
-          property: connectionString
-      - key: POSTGRES_HOST
-        fromDatabase:
-          name: doctorfollow-db
-          property: host
-      - key: POSTGRES_PORT
-        fromDatabase:
-          name: doctorfollow-db
-          property: port
-      - key: POSTGRES_DB
-        fromDatabase:
-          name: doctorfollow-db
-          property: database
-      - key: POSTGRES_USER
-        fromDatabase:
-          name: doctorfollow-db
-          property: user
-      - key: POSTGRES_PASSWORD
-        fromDatabase:
-          name: doctorfollow-db
-          property: password
+      # PostgreSQL - MANUALLY SET THESE FROM YOUR EXISTING DATABASE
+      # Get these values from your existing Render PostgreSQL instance
+      - key: POSTGRES_URL
+        sync: false  # Set this manually with your existing database connection string
 
       # Neo4j - SET THESE MANUALLY AFTER CREATING NEO4J AURA INSTANCE
       - key: NEO4J_URI
@@ -95,12 +74,4 @@ services:
       - key: RRF_K
         value: 60
 
-# PostgreSQL Database
-databases:
-  - name: doctorfollow-db
-    databaseName: doctorfollow
-    user: doctorfollow
-    plan: free
-    region: oregon
-    # postgresMajorVersion removed - let Render use the default version
-    ipAllowList: []
+# No databases section - using existing database
