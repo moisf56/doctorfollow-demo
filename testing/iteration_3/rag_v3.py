@@ -37,7 +37,7 @@ sys.path.append(str(Path(__file__).parent.parent / "iteration_2"))
 sys.path.append(str(Path(__file__).parent))
 
 from config import settings
-from iteration_1.opensearch_store import OpenSearchStore
+from iteration_1.opensearch_store import ElasticsearchStore
 from iteration_2.pgvector_store import PgVectorStore
 from iteration_2.rrf_fusion import RRFFusion
 from neo4j_store import Neo4jStore
@@ -76,8 +76,6 @@ class MedicalRAGv3:
 
     def __init__(
         self,
-        opensearch_host: str = None,
-        opensearch_port: int = None,
         postgres_url: str = None,
         neo4j_uri: str = None,
         neo4j_user: str = None,
@@ -92,8 +90,6 @@ class MedicalRAGv3:
         Initialize RAG v3 with hybrid retrieval + KG
 
         Args:
-            opensearch_host: OpenSearch host
-            opensearch_port: OpenSearch port
             postgres_url: PostgreSQL URL
             neo4j_uri: Neo4j URI
             neo4j_user: Neo4j username
@@ -105,8 +101,6 @@ class MedicalRAGv3:
             model_id: AWS Bedrock model ID
         """
         # Use settings defaults if not provided
-        opensearch_host = opensearch_host or settings.OPENSEARCH_HOST
-        opensearch_port = opensearch_port or settings.OPENSEARCH_PORT
         postgres_url = postgres_url or settings.get_postgres_url()
         neo4j_uri = neo4j_uri or settings.NEO4J_URI
         neo4j_user = neo4j_user or settings.NEO4J_USER
@@ -114,12 +108,9 @@ class MedicalRAGv3:
         model_id = model_id or settings.BEDROCK_MODEL_ID
 
         # Initialize retrieval systems
-        print("[Loading] OpenSearch (BM25)...")
-        self.opensearch = OpenSearchStore(
-            host=opensearch_host,
-            port=opensearch_port,
-            index_name=settings.OPENSEARCH_INDEX
-        )
+        print("[Loading] ElasticSearch (BM25)...")
+        # ElasticsearchStore now uses environment variables (ES_URL, ES_API_KEY, ES_INDEX_NAME)
+        self.opensearch = ElasticsearchStore()
 
         print("[Loading] pgvector (Semantic)...")
         self.pgvector = PgVectorStore(

@@ -1,12 +1,14 @@
 """
 Elasticsearch Store for DoctorFollow Medical Search Agent
-Iteration 1: BM25 lexical search implementation (Migrated to Elastic Cloud Serverless)
+Iteration 1: BM25 lexical search implementation (Elastic Cloud Serverless)
 """
 from typing import List, Dict, Any, Optional
-from opensearchpy import OpenSearch, helpers
 from dataclasses import dataclass
 import json
-import os # <-- New import for ENV variables
+import os
+
+# Use official Elasticsearch client for Elastic Cloud
+from elasticsearch import Elasticsearch, helpers
 
 @dataclass
 class SearchResult:
@@ -19,7 +21,7 @@ class SearchResult:
     paragraph_id: Optional[str] = None
 
 
-class ElasticsearchStore: # <-- Renamed class for clarity
+class ElasticsearchStore:
     """
     Elasticsearch client for medical document retrieval (Elastic Cloud Serverless)
 
@@ -29,7 +31,7 @@ class ElasticsearchStore: # <-- Renamed class for clarity
     - Bulk indexing
     """
 
-    def __init__(self): # <-- Simplified constructor; uses ENV variables
+    def __init__(self):
         """
         Initialize Elasticsearch connection using Elastic Cloud Serverless credentials.
         
@@ -44,23 +46,26 @@ class ElasticsearchStore: # <-- Renamed class for clarity
         if not es_url or not es_api_key:
             raise EnvironmentError("ES_URL and ES_API_KEY environment variables must be set for Elastic Cloud Serverless connection.")
 
-        # 2. Initialize OpenSearch client (which is compatible with Elasticsearch)
-        self.client = OpenSearch(
-            hosts=[es_url],           # Full Elastic Cloud URL
-            api_key=es_api_key,       # API Key for authentication
-            # Elastic Cloud uses HTTPS, so these are set to TRUE
-            use_ssl=True, 
-            verify_certs=True,
-            ssl_assert_hostname=False,
-            ssl_show_warn=False,
-            http_compress=True,
+        # 2. Initialize Elasticsearch client with API key authentication
+        self.client = Elasticsearch(
+            es_url,
+            api_key=es_api_key,
+            request_timeout=30,
+            max_retries=3,
+            retry_on_timeout=True
         )
+        
         self.index_name = index_name
+        
+        # Test connection
+        try:
+            info = self.client.info()
+            print(f"[OK] Connected to Elasticsearch: {info.get('version', {}).get('number', 'unknown')}")
+        except Exception as e:
+            print(f"[ERROR] Failed to connect to Elasticsearch: {e}")
+            raise
+        
         self._create_index_if_not_exists()
-
-    # NOTE: All other methods (e.g., _create_index_if_not_exists, index_chunks, search, etc.)
-    # can remain exactly as they were, as the OpenSearch client library calls are compatible
-    # with the hosted Elasticsearch service.
 
     def _create_index_if_not_exists(self):
         """Create index with medical-optimized mapping"""
@@ -69,6 +74,7 @@ class ElasticsearchStore: # <-- Renamed class for clarity
             return
 
         # Mapping optimized for medical text
+        # NOTE: Serverless mode doesn't allow shard/replica settings
         mapping = {
             "settings": {
                 "analysis": {
@@ -78,11 +84,8 @@ class ElasticsearchStore: # <-- Renamed class for clarity
                             "stopwords": "_english_"  # Keep medical terms
                         }
                     }
-                },
-                "index": {
-                    "number_of_shards": 1,
-                    "number_of_replicas": 0
                 }
+                # No index.number_of_shards or index.number_of_replicas in serverless mode
             },
             "mappings": {
                 "properties": {
@@ -112,7 +115,7 @@ class ElasticsearchStore: # <-- Renamed class for clarity
 
     def index_chunks(self, chunks: List[Dict[str, Any]]) -> Dict[str, Any]:
         """
-        Bulk index chunks to OpenSearch
+        Bulk index chunks to Elasticsearch
 
         Args:
             chunks: List of chunk dictionaries with text and metadata
@@ -144,21 +147,30 @@ class ElasticsearchStore: # <-- Renamed class for clarity
         ]
 
         # Bulk index
-        success, failed = helpers.bulk(
-            self.client,
-            actions,
-            stats_only=False,
-            raise_on_error=False
-        )
+        try:
+            success, failed = helpers.bulk(
+                self.client,
+                actions,
+                stats_only=False,
+                raise_on_error=False
+            )
 
-        print(f"[OK] Indexed {success} chunks, {len(failed)} failed")
+            print(f"[OK] Indexed {success} chunks, {len(failed)} failed")
 
-        return {
-            "indexed": success,
-            "failed": len(failed),
-            "total_chunks": len(chunks),
-            "index_name": self.index_name
-        }
+            return {
+                "indexed": success,
+                "failed": len(failed),
+                "total_chunks": len(chunks),
+                "index_name": self.index_name
+            }
+        except Exception as e:
+            print(f"[ERROR] Bulk indexing failed: {e}")
+            return {
+                "error": str(e),
+                "indexed": 0,
+                "failed": len(chunks),
+                "total_chunks": len(chunks)
+            }
 
     def search(
         self,
@@ -167,7 +179,7 @@ class ElasticsearchStore: # <-- Renamed class for clarity
         filters: Optional[Dict[str, Any]] = None
     ) -> List[SearchResult]:
         """
-        BM25 search in OpenSearch
+        BM25 search in Elasticsearch
 
         Args:
             query: Search query (Turkish or English)
@@ -213,49 +225,60 @@ class ElasticsearchStore: # <-- Renamed class for clarity
                 )
 
         # Execute search
-        response = self.client.search(
-            index=self.index_name,
-            body=query_body
-        )
+        try:
+            response = self.client.search(
+                index=self.index_name,
+                body=query_body
+            )
 
-        # Parse results
-        results = []
-        for hit in response['hits']['hits']:
-            source = hit['_source']
-            results.append(SearchResult(
-                chunk_id=hit['_id'],
-                text=source.get('text', ''),
-                score=hit['_score'],
-                metadata=source,
-                page_number=source.get('page_number'),
-                paragraph_id=source.get('paragraph_id')
-            ))
+            # Parse results
+            results = []
+            for hit in response['hits']['hits']:
+                source = hit['_source']
+                results.append(SearchResult(
+                    chunk_id=hit['_id'],
+                    text=source.get('text', ''),
+                    score=hit['_score'],
+                    metadata=source,
+                    page_number=source.get('page_number'),
+                    paragraph_id=source.get('paragraph_id')
+                ))
 
-        return results
+            return results
+        except Exception as e:
+            print(f"[ERROR] Search failed: {e}")
+            return []
 
     def get_stats(self) -> Dict[str, Any]:
         """Get index statistics"""
-        if not self.client.indices.exists(index=self.index_name):
-            return {"exists": False}
+        try:
+            if not self.client.indices.exists(index=self.index_name):
+                return {"exists": False}
 
-        stats = self.client.indices.stats(index=self.index_name)
-        count = self.client.count(index=self.index_name)
+            stats = self.client.indices.stats(index=self.index_name)
+            count = self.client.count(index=self.index_name)
 
-        return {
-            "exists": True,
-            "total_documents": count['count'],
-            "index_size_bytes": stats['indices'][self.index_name]['total']['store']['size_in_bytes'],
-            "index_name": self.index_name
-        }
+            return {
+                "exists": True,
+                "total_documents": count['count'],
+                "index_size_bytes": stats['indices'][self.index_name]['total']['store']['size_in_bytes'],
+                "index_name": self.index_name
+            }
+        except Exception as e:
+            print(f"[ERROR] Failed to get stats: {e}")
+            return {"exists": False, "error": str(e)}
 
     def delete_index(self):
         """Delete the index (use with caution!)"""
-        if self.client.indices.exists(index=self.index_name):
-            self.client.indices.delete(index=self.index_name)
-            print(f"[OK] Deleted index '{self.index_name}'")
+        try:
+            if self.client.indices.exists(index=self.index_name):
+                self.client.indices.delete(index=self.index_name)
+                print(f"[OK] Deleted index '{self.index_name}'")
+        except Exception as e:
+            print(f"[ERROR] Failed to delete index: {e}")
 
     def close(self):
-        """Close OpenSearch connection"""
+        """Close Elasticsearch connection"""
         self.client.close()
 
 
@@ -264,7 +287,7 @@ if __name__ == "__main__":
     print("=== Elastic Cloud Store Test ===\n")
 
     try:
-        store = ElasticsearchStore() # <-- Now uses ENV variables
+        store = ElasticsearchStore()
 
         # Test indexing
         test_chunks = [
@@ -309,3 +332,7 @@ if __name__ == "__main__":
     except EnvironmentError as e:
         print(f"FATAL ERROR: {e}")
         print("Please ensure ES_URL and ES_API_KEY are set correctly in your environment.")
+    except Exception as e:
+        print(f"ERROR: {e}")
+        import traceback
+        traceback.print_exc()

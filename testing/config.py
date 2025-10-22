@@ -22,6 +22,8 @@ class Settings(BaseSettings):
     OPENSEARCH_INDEX: str = "medical_chunks"
 
     # PostgreSQL + pgvector
+    # Can use either POSTGRES_URL (full connection string) OR individual components
+    POSTGRES_URL: Optional[str] = None  # Full connection string (takes priority)
     POSTGRES_HOST: str = "localhost"
     POSTGRES_PORT: int = 5432
     POSTGRES_DB: str = "doctorfollow"
@@ -70,7 +72,9 @@ class Settings(BaseSettings):
         return f"http://{self.OPENSEARCH_HOST}:{self.OPENSEARCH_PORT}"
 
     def get_postgres_url(self) -> str:
-        """Get PostgreSQL connection string"""
+        """Get PostgreSQL connection string - prioritizes POSTGRES_URL if set"""
+        if self.POSTGRES_URL:
+            return self.POSTGRES_URL
         return f"postgresql://{self.POSTGRES_USER}:{self.POSTGRES_PASSWORD}@{self.POSTGRES_HOST}:{self.POSTGRES_PORT}/{self.POSTGRES_DB}"
 
 
