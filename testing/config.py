@@ -32,9 +32,9 @@ class Settings(BaseSettings):
     PGVECTOR_TABLE: str = "embeddings"
 
     # Neo4j
-    NEO4J_URI: str = "bolt://localhost:7687"
+    NEO4J_URI: str = "neo4j+s://52dba6f2.databases.neo4j.io"
     NEO4J_USER: str = "neo4j"
-    NEO4J_PASSWORD: str = "doctorfollow123"
+    NEO4J_PASSWORD: str = "KRFRRHmIMvw1lcg-MEjWDEtGfHlw8oOX6GvHWKJba3o"
 
     # AWS Bedrock
     AWS_REGION: str = "us-east-1"
