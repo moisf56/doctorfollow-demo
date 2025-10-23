@@ -53,6 +53,7 @@ app.add_middleware(
         "http://localhost:3000",
         "http://localhost:3001",
         "https://doctorfollow-demo.vercel.app",
+        "https://doctorfollow-demo-lq7zjtrb6-saif-s-projects-96091c26.vercel.app",  # Specific preview URL
     ],
     allow_origin_regex=r"https://.*\.vercel\.app",  # Regex for Vercel preview deployments
     allow_credentials=True,
