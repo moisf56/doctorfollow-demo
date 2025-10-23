@@ -90,7 +90,7 @@ async def startup_event():
     print(f"Authentication: ENABLED")
     print(f"Demo Username: {DEMO_USERNAME}")
     print(f"Demo Password: {'*' * len(DEMO_PASSWORD)}")
-    print(f"Allowed Origins: {allowed_origins}")
+    print(f"CORS: Enabled for localhost and Vercel deployments")
     print("="*80)
     try:
         # Check if MedicalRAGv3 was successfully imported
