@@ -45,16 +45,16 @@ security = HTTPBasic()
 DEMO_USERNAME = os.getenv("DEMO_USERNAME", "demo")
 DEMO_PASSWORD = os.getenv("DEMO_PASSWORD", "DoctorFollow2025!")
 
-# CORS Configuration - Simple and explicit
-# Using most permissive settings that still allow credentials
+# CORS Configuration
+# Using allow_origin_regex for Vercel wildcard subdomain matching
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
         "http://localhost:3000",
         "http://localhost:3001",
         "https://doctorfollow-demo.vercel.app",
-        "https://*.vercel.app"  # Allow all Vercel preview deployments
     ],
+    allow_origin_regex=r"https://.*\.vercel\.app",  # Regex for Vercel preview deployments
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
