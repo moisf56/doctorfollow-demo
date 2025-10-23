@@ -21,9 +21,9 @@ services:
       - key: DEMO_PASSWORD
         generateValue: true
 
-      # CORS - UPDATE THIS AFTER FRONTEND DEPLOYMENT
+      # CORS - Frontend URLs
       - key: ALLOWED_ORIGINS
-        value: http://localhost:3000,https://doctorfollow.vercel.app
+        value: http://localhost:3000,http://localhost:3001,https://doctorfollow-demo.vercel.app
 
       # LLM Provider
       - key: LLM_PROVIDER

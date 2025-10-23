@@ -46,10 +46,12 @@ DEMO_USERNAME = os.getenv("DEMO_USERNAME", "demo")
 DEMO_PASSWORD = os.getenv("DEMO_PASSWORD", "DoctorFollow2025!")
 
 # Configure CORS for frontend - UPDATE THIS WITH YOUR DEPLOYED FRONTEND URL
-allowed_origins = os.getenv(
-    "ALLOWED_ORIGINS",
-    "http://localhost:3000,http://localhost:3001, https://doctorfollow-demo.vercel.app"
-).split(",")
+allowed_origins = [
+    origin.strip() for origin in os.getenv(
+        "ALLOWED_ORIGINS",
+        "http://localhost:3000,http://localhost:3001,https://doctorfollow-demo.vercel.app"
+    ).split(",")
+]
 
 app.add_middleware(
     CORSMiddleware,
