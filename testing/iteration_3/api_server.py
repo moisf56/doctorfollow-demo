@@ -57,8 +57,10 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=allowed_origins,
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
+    allow_headers=["Content-Type", "Authorization", "Accept"],
+    expose_headers=["*"],
+    max_age=3600,
 )
 
 # Initialize RAG system (singleton)
@@ -648,9 +650,19 @@ if __name__ == "__main__":
     print("\n" + "="*80)
     print("STARTING DOCTOR FOLLOW API SERVER")
     print("="*80)
-    print("\nServer will be available at:")
-    print("  - Local: http://localhost:8000")
-    print("  - Docs:  http://localhost:8000/docs")
+
+    # Determine environment
+    render_url = os.getenv("RENDER_EXTERNAL_URL")
+    if render_url:
+        print(f"\nServer will be available at:")
+        print(f"  - Public: {render_url}")
+        print(f"  - Docs:   {render_url}/docs")
+        print(f"  - Health: {render_url}/health")
+    else:
+        print("\nServer will be available at:")
+        print("  - Local: http://localhost:8000")
+        print("  - Docs:  http://localhost:8000/docs")
+
     print("\nPress Ctrl+C to stop the server")
     print("="*80 + "\n")
 

@@ -21,8 +21,8 @@ boto3>=1.35.0
 botocore>=1.35.0
 
 # OpenAI (alternative LLM provider)
-langchain-openai>=0.2.0
-openai==1.54.4
+langchain-openai>=0.3.0
+openai>=1.54.4
 
 # ============================================
 # Database Drivers
