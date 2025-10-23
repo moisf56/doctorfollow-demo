@@ -45,39 +45,19 @@ security = HTTPBasic()
 DEMO_USERNAME = os.getenv("DEMO_USERNAME", "demo")
 DEMO_PASSWORD = os.getenv("DEMO_PASSWORD", "DoctorFollow2025!")
 
-# Configure CORS for frontend - UPDATE THIS WITH YOUR DEPLOYED FRONTEND URL
-allowed_origins = [
-    origin.strip() for origin in os.getenv(
-        "ALLOWED_ORIGINS",
-        "http://localhost:3000,http://localhost:3000,https://doctorfollow-demo.vercel.app"
-    ).split(",")
-]
-
-# Debug: Log CORS configuration on startup
-print(f"\n[CORS DEBUG] Allowed origins: {allowed_origins}\n")
-
-# Add custom middleware to log OPTIONS requests for debugging BEFORE CORS middleware
-@app.middleware("http")
-async def log_cors_requests(request, call_next):
-    if request.method == "OPTIONS":
-        origin = request.headers.get('origin', 'NO ORIGIN')
-        print(f"[CORS DEBUG] OPTIONS request from: {origin}")
-        print(f"[CORS DEBUG] Request method: {request.headers.get('access-control-request-method', 'NONE')}")
-        print(f"[CORS DEBUG] Request headers: {request.headers.get('access-control-request-headers', 'NONE')}")
-        print(f"[CORS DEBUG] Origin in allowed list: {origin in allowed_origins}")
-    response = await call_next(request)
-    if request.method == "OPTIONS":
-        print(f"[CORS DEBUG] Response status: {response.status_code}")
-    return response
-
+# CORS Configuration - Simple and explicit
+# Using most permissive settings that still allow credentials
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=allowed_origins,
+    allow_origins=[
+        "http://localhost:3000",
+        "http://localhost:3001",
+        "https://doctorfollow-demo.vercel.app",
+        "https://*.vercel.app"  # Allow all Vercel preview deployments
+    ],
     allow_credentials=True,
-    allow_methods=["*"],  # Allow all methods
-    allow_headers=["*"],  # Allow all headers (wildcard works for request headers)
-    expose_headers=[],  # Cannot use "*" with credentials for response headers
-    max_age=3600,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 # Initialize RAG system (singleton)
