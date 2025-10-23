@@ -41,9 +41,13 @@ app = FastAPI(
 # Security setup
 security = HTTPBasic()
 
-# Demo credentials - CHANGE THESE FOR PRODUCTION
-DEMO_USERNAME = os.getenv("DEMO_USERNAME", "demo")
-DEMO_PASSWORD = os.getenv("DEMO_PASSWORD", "DoctorFollow2025!")
+# Demo credentials - Multiple users supported
+# Format: username:password pairs
+DEMO_USERS = {
+    "demo": "DoctorFollow2025!",
+    "amrosbk": "123456789!",
+    "saif": "KlmnFilter561130!"
+}
 
 # CORS Configuration
 # Using allow_origin_regex for Vercel wildcard subdomain matching
@@ -68,11 +72,24 @@ rag_system: Optional[MedicalRAGv3] = None
 def verify_credentials(credentials: HTTPBasicCredentials = Depends(security)):
     """
     Verify username and password for HTTP Basic Auth
+    Supports multiple users from DEMO_USERS dictionary
     """
-    correct_username = secrets.compare_digest(credentials.username.encode("utf8"), DEMO_USERNAME.encode("utf8"))
-    correct_password = secrets.compare_digest(credentials.password.encode("utf8"), DEMO_PASSWORD.encode("utf8"))
+    # Check if username exists
+    if credentials.username not in DEMO_USERS:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid credentials",
+            headers={"WWW-Authenticate": "Basic"},
+        )
 
-    if not (correct_username and correct_password):
+    # Verify password using timing-safe comparison
+    expected_password = DEMO_USERS[credentials.username]
+    correct_password = secrets.compare_digest(
+        credentials.password.encode("utf8"),
+        expected_password.encode("utf8")
+    )
+
+    if not correct_password:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid credentials",
@@ -89,8 +106,7 @@ async def startup_event():
     print("INITIALIZING DOCTOR FOLLOW API SERVER (SECURE)")
     print("="*80)
     print(f"Authentication: ENABLED")
-    print(f"Demo Username: {DEMO_USERNAME}")
-    print(f"Demo Password: {'*' * len(DEMO_PASSWORD)}")
+    print(f"Registered Users: {', '.join(DEMO_USERS.keys())}")
     print(f"CORS: Enabled for localhost and Vercel deployments")
     print("="*80)
     try:
