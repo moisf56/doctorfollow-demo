@@ -59,7 +59,7 @@ app.add_middleware(
     allow_credentials=True,
     allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
     allow_headers=["Content-Type", "Authorization", "Accept"],
-    expose_headers=["*"],
+    expose_headers=[],  # Cannot use "*" with credentials - use explicit list or empty
     max_age=3600,
 )
 
