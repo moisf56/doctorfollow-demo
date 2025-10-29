@@ -41,7 +41,7 @@ from iteration_1.opensearch_store import ElasticsearchStore
 from iteration_2.pgvector_store import PgVectorStore
 from iteration_2.rrf_fusion import RRFFusion
 from neo4j_store import Neo4jStore
-from kg_expander import KGExpander
+from modern_kg_expander import ModernKGExpander  # NEW: Modern GraphRAG strategies
 
 
 # ============================================
@@ -130,7 +130,7 @@ class MedicalRAGv3:
 
         # Initialize RRF fusion with weighted semantic similarity (2x more important than BM25)
         self.rrf_fusion = RRFFusion(k=rrf_k, semantic_weight=2.0, bm25_weight=1.0)
-        self.kg_expander = KGExpander(self.neo4j)
+        self.kg_expander = ModernKGExpander(self.neo4j)  # NEW: Use modern strategies
 
         # Retrieval parameters
         self.top_k_bm25 = top_k_bm25
