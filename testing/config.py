@@ -31,10 +31,11 @@ class Settings(BaseSettings):
     POSTGRES_PASSWORD: str = "follow123"
     PGVECTOR_TABLE: str = "embeddings"
 
-    # Neo4j (use neo4j+ssc:// for self-signed certificates in Aura)
-    NEO4J_URI: str = "neo4j+ssc://52dba6f2.databases.neo4j.io"
+    # Neo4j (NEW instance for LLM Graph Builder - Created 2025-10-29)
+    NEO4J_URI: str = "neo4j+s://a1dff425.databases.neo4j.io"
     NEO4J_USER: str = "neo4j"
-    NEO4J_PASSWORD: str = "KRFRRHmIMvw1lcg-MEjWDEtGfHlw8oOX6GvHWKJba3o"
+    NEO4J_PASSWORD: str = "9MLNnl6WKSDXXLHJc4W8E6VO7jRAIUfINEpHRAt8YXs"
+    NEO4J_DATABASE: str = "neo4j"
 
     # AWS Bedrock
     AWS_REGION: str = "us-east-1"
