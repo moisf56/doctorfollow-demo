@@ -32,7 +32,8 @@ class Settings(BaseSettings):
     PGVECTOR_TABLE: str = "embeddings"
 
     # Neo4j (NEW instance for LLM Graph Builder - Created 2025-10-29)
-    NEO4J_URI: str = "neo4j+s://a1dff425.databases.neo4j.io"
+    # Note: Using neo4j+ssc:// for self-signed certificate (Aura)
+    NEO4J_URI: str = "neo4j+ssc://a1dff425.databases.neo4j.io"
     NEO4J_USER: str = "neo4j"
     NEO4J_PASSWORD: str = "9MLNnl6WKSDXXLHJc4W8E6VO7jRAIUfINEpHRAt8YXs"
     NEO4J_DATABASE: str = "neo4j"
