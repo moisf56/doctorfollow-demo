@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Send, Menu, X, Stethoscope, Sparkles, Mic, MicOff, ChevronDown, ChevronUp, Lock, User, AlertCircle } from 'lucide-react';
+import { Send, Menu, X, Stethoscope, Sparkles, Mic, MicOff, ChevronDown, ChevronUp, Lock, User, AlertCircle, Database, GitBranch, Lightbulb } from 'lucide-react';
 
 // API Configuration
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000';
