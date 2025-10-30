@@ -36,8 +36,9 @@ class ModernKGExpander:
         query: str,
         chunks: List[Dict],
         max_hops: int = 2,
-        strategy: str = "auto"
-    ) -> str:
+        strategy: str = "auto",
+        return_metadata: bool = False
+    ) -> str | Dict[str, Any]:
         """
         Main entry point: Choose strategy based on query complexity
 
@@ -46,25 +47,53 @@ class ModernKGExpander:
             chunks: Retrieved chunks from hybrid search
             max_hops: Maximum graph traversal depth
             strategy: "local", "global", "hybrid", or "auto"
+            return_metadata: If True, return dict with context + debugging metadata
 
         Returns:
-            Enriched context string for LLM
+            Enriched context string for LLM (or dict with metadata if return_metadata=True)
         """
+        # Initialize metadata tracking
+        metadata = {
+            "entities_found": [],
+            "relationships_found": [],
+            "strategy_used": strategy,
+            "chunks_before_kg": len(chunks),
+            "similar_chunks_found": 0
+        }
+
         if strategy == "auto":
             # Determine strategy based on query
             strategy = self._detect_query_strategy(query, chunks)
+            metadata["strategy_used"] = strategy
+
+        # Track entities before expansion
+        entities = self._extract_entity_names(query, chunks)
+        metadata["entities_found"] = entities[:10]  # Limit to 10 for display
 
         if strategy == "local":
-            return self._local_entity_search(query, chunks, max_hops)
+            context, rel_metadata = self._local_entity_search_with_metadata(query, chunks, max_hops)
+            metadata["relationships_found"] = rel_metadata
         elif strategy == "global":
-            return self._global_semantic_search(query, chunks)
+            context, sim_count = self._global_semantic_search_with_metadata(query, chunks)
+            metadata["similar_chunks_found"] = sim_count
         elif strategy == "hybrid":
-            local_ctx = self._local_entity_search(query, chunks, max_hops)
-            global_ctx = self._global_semantic_search(query, chunks)
-            return self._merge_contexts(local_ctx, global_ctx)
+            local_ctx, rel_metadata = self._local_entity_search_with_metadata(query, chunks, max_hops)
+            global_ctx, sim_count = self._global_semantic_search_with_metadata(query, chunks)
+            context = self._merge_contexts(local_ctx, global_ctx)
+            metadata["relationships_found"] = rel_metadata
+            metadata["similar_chunks_found"] = sim_count
         else:
             # Fallback: basic expansion
-            return self._local_entity_search(query, chunks, max_hops)
+            context, rel_metadata = self._local_entity_search_with_metadata(query, chunks, max_hops)
+            metadata["relationships_found"] = rel_metadata
+
+        if return_metadata:
+            return {
+                "context": context,
+                "metadata": metadata
+            }
+        else:
+            return context
 
     def _detect_query_strategy(self, query: str, chunks: List[Dict]) -> str:
         """
