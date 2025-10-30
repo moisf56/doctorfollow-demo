@@ -586,8 +586,8 @@ async def chat_stream(
             yield f"data: {json.dumps({'type': 'thinking', 'content': '• Formulating evidence-based response...\n'})}\n\n"
             await asyncio.sleep(0.2)
 
-            # Medical query - RAG with language and conditional KG based on complexity
-            result = rag_system.ask(request.query, language=language, complexity=complexity)
+            # Medical query - RAG v4 with debug mode
+            result = rag_system.ask_with_debug(request.query, language=language, complexity=complexity)
             full_answer = result["answer"]
 
             # Parse the answer for reasoning, answer, and references
@@ -670,6 +670,15 @@ async def chat_stream(
                 })
 
             yield f"data: {json.dumps({'type': 'sources', 'data': sources_data})}\n\n"
+
+            # Send Neo4j insights (debug data)
+            neo4j_insights = result.get('neo4j_insights')
+            if neo4j_insights:
+                yield f"data: {json.dumps({'type': 'neo4j_insights', 'data': neo4j_insights})}\n\n"
+
+            # Send before/after KG answers (debug data)
+            if result.get('answer_before_kg') and result.get('answer_after_kg'):
+                yield f"data: {json.dumps({'type': 'kg_comparison', 'data': {'answer_before_kg': result['answer_before_kg'], 'answer_after_kg': result['answer_after_kg']}})}\n\n"
 
             # Done
             yield f"data: {json.dumps({'type': 'done'})}\n\n"
