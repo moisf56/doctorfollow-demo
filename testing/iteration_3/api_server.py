@@ -28,8 +28,10 @@ sys.path.append(str(Path(__file__).parent.parent))
 sys.path.append(str(Path(__file__).parent.parent / "iteration_1"))
 sys.path.append(str(Path(__file__).parent.parent / "iteration_2"))
 sys.path.append(str(Path(__file__).parent.parent / "iteration_3"))
-# CRITICAL EXTERNAL DEPENDENCY: Ensure rag_v3.py is accessible in one of the paths above
-from rag_v3 import MedicalRAGv3
+sys.path.append(str(Path(__file__).parent.parent / "iteration_5"))
+# CRITICAL EXTERNAL DEPENDENCY: Ensure rag files are accessible in one of the paths above
+# Using RAG v4 for debug mode with Neo4j insights
+from iteration_5.rag_v4 import MedicalRAGv4
 
 # Initialize FastAPI app
 app = FastAPI(
@@ -66,7 +68,7 @@ app.add_middleware(
 )
 
 # Initialize RAG system (singleton)
-rag_system: Optional[MedicalRAGv3] = None
+rag_system: Optional[MedicalRAGv4] = None
 
 
 def verify_credentials(credentials: HTTPBasicCredentials = Depends(security)):
