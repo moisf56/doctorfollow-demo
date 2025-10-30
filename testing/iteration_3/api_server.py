@@ -347,15 +347,17 @@ async def root():
     return {
         "status": "online",
         "service": "Doctor Follow API",
-        "version": "3.0.0",
+        "version": "4.0.0",
         "authentication": "enabled",
-        "rag_version": "v3",
+        "rag_version": "v4",
         "features": [
             "Cross-lingual support (Turkish/English)",
-            "Knowledge graph enrichment",
+            "Knowledge graph enrichment (Neo4j LLM Graph Builder)",
             "Hybrid retrieval (BM25 + Semantic)",
             "LangGraph workflow",
-            "Conversational AI with LLM classification"
+            "Conversational AI with LLM classification",
+            "Debug mode with Neo4j insights (entities, relationships)",
+            "Before/after KG comparison"
         ]
     }
 
