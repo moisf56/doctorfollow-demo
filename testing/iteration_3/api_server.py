@@ -112,12 +112,12 @@ async def startup_event():
     print(f"CORS: Enabled for localhost and Vercel deployments")
     print("="*80)
     try:
-        # Check if MedicalRAGv3 was successfully imported
-        if MedicalRAGv3:
-            rag_system = MedicalRAGv3()
-            print("\n[OK] RAG v3 system initialized successfully")
+        # Check if MedicalRAGv4 was successfully imported
+        if MedicalRAGv4:
+            rag_system = MedicalRAGv4()
+            print("\n[OK] RAG v4 system initialized successfully (Debug Mode with Neo4j Insights)")
         else:
-            print("\n[ERROR] RAG system not initialized due to missing MedicalRAGv3 class.")
+            print("\n[ERROR] RAG system not initialized due to missing MedicalRAGv4 class.")
             # Do not raise here, allow the server to start for health check, but endpoints will fail
     except Exception as e:
         print(f"\n[ERROR] Failed to initialize RAG system: {e}")
@@ -161,6 +161,15 @@ class Source(BaseModel):
     semantic_score: Optional[float] = None
 
 
+class Neo4jInsights(BaseModel):
+    """Neo4j debugging insights"""
+    entities_found: List[str]
+    relationships_found: List[Dict[str, str]]
+    strategy_used: str
+    kg_enrichment_enabled: bool
+    kg_context_length: int
+
+
 class ChatResponse(BaseModel):
     """Chat response model"""
     query: str
@@ -170,6 +179,9 @@ class ChatResponse(BaseModel):
     num_sources: int
     detected_language: Optional[str] = None
     query_type: Optional[str] = None  # 'conversational' or 'medical'
+    answer_before_kg: Optional[str] = None  # Answer without KG enrichment (debug mode)
+    answer_after_kg: Optional[str] = None   # Answer with KG enrichment (debug mode)
+    neo4j_insights: Optional[Neo4jInsights] = None  # Neo4j debugging insights
 
 
 class LoginResponse(BaseModel):
