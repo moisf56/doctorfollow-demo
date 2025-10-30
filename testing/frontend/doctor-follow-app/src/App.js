@@ -150,7 +150,7 @@ const LoginPage = ({ onLoginSuccess }) => {
 
         {/* Footer */}
         <div className="mt-6 text-center text-sm text-purple-200/40">
-          <p>Powered by Medical RAG v3</p>
+          <p>Powered by Medical RAG v4 + Neo4j LLM Graph Builder</p>
         </div>
       </div>
     </div>
