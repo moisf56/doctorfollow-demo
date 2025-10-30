@@ -365,8 +365,8 @@ async def health_check():
     """Detailed health check (no auth required)"""
     if rag_system is None:
         # Check if RAG was expected but failed to load
-        if MedicalRAGv3 is None:
-            detail_msg = "RAG system class not found (MedicalRAGv3 missing from rag_v3 module)"
+        if MedicalRAGv4 is None:
+            detail_msg = "RAG system class not found (MedicalRAGv4 missing from rag_v4 module)"
         else:
             detail_msg = "RAG system not initialized (likely an error during startup)"
 
@@ -463,8 +463,8 @@ async def chat(
                 print(f"[API] Response generated")
 
         else:
-            # Medical query - use RAG pipeline with language and complexity
-            result = rag_system.ask(request.query, language=language, complexity=complexity)
+            # Medical query - use RAG v4 pipeline with debug mode
+            result = rag_system.ask_with_debug(request.query, language=language, complexity=complexity)
 
             # Convert sources to response model with snippets
             sources = []
@@ -487,6 +487,11 @@ async def chat(
                     semantic_score=src.get("semantic_score")
                 ))
 
+            # Convert neo4j_insights to Pydantic model
+            neo4j_insights_data = result.get("neo4j_insights")
+            neo4j_insights = None
+            if neo4j_insights_data:
+                neo4j_insights = Neo4jInsights(**neo4j_insights_data)
 
             response = ChatResponse(
                 query=result["query"],
@@ -495,7 +500,10 @@ async def chat(
                 kg_context=result.get("kg_context"),
                 num_sources=result["num_sources"],
                 detected_language=None,
-                query_type='medical'
+                query_type='medical',
+                answer_before_kg=result.get("answer_before_kg"),
+                answer_after_kg=result.get("answer_after_kg"),
+                neo4j_insights=neo4j_insights
             )
 
             try:
