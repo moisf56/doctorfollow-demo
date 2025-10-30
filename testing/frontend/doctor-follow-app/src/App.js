@@ -331,6 +331,13 @@ const DoctorFollowChat = ({ authCredentials, username, onLogout }) => {
                   case 'sources':
                     msg.sources = event.data || [];
                     break;
+                  case 'neo4j_insights':
+                    msg.neo4j_insights = event.data || null;
+                    break;
+                  case 'kg_comparison':
+                    msg.answer_before_kg = event.data?.answer_before_kg || null;
+                    msg.answer_after_kg = event.data?.answer_after_kg || null;
+                    break;
                   case 'done':
                     msg.isStreaming = false;
                     let finalContent = '';
@@ -459,6 +466,106 @@ const DoctorFollowChat = ({ authCredentials, username, onLogout }) => {
                     <p className="mt-1 line-clamp-2">{source.text}</p>
                   </div>
                 ))}
+              </div>
+            </div>
+          )}
+
+          {/* Neo4j Insights Section (Streaming) */}
+          {message.neo4j_insights && message.neo4j_insights.kg_enrichment_enabled && (
+            <div className="border-t border-blue-700/30 pt-3 mt-3">
+              <div className="bg-blue-900/20 border border-blue-500/30 rounded-lg p-3">
+                <div className="flex items-center gap-2 mb-3">
+                  <Database className="w-4 h-4 text-blue-400" />
+                  <p className="text-xs font-semibold text-blue-300">NEO4J KNOWLEDGE GRAPH INSIGHTS</p>
+                </div>
+
+                {/* Strategy Used */}
+                <div className="mb-3 flex items-center gap-2 text-xs">
+                  <Lightbulb className="w-3 h-3 text-yellow-400" />
+                  <span className="text-gray-400">Strategy:</span>
+                  <span className="text-yellow-300 font-medium uppercase">{message.neo4j_insights.strategy_used}</span>
+                </div>
+
+                {/* Entities Found */}
+                {message.neo4j_insights.entities_found && message.neo4j_insights.entities_found.length > 0 && (
+                  <div className="mb-3">
+                    <p className="text-xs text-gray-400 mb-2 flex items-center gap-1">
+                      <span className="w-2 h-2 bg-green-400 rounded-full"></span>
+                      Entities Identified ({message.neo4j_insights.entities_found.length})
+                    </p>
+                    <div className="flex flex-wrap gap-1">
+                      {message.neo4j_insights.entities_found.slice(0, 10).map((entity, idx) => (
+                        <span key={idx} className="px-2 py-1 bg-green-900/30 text-green-300 text-xs rounded border border-green-500/30">
+                          {entity}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Relationships Traversed */}
+                {message.neo4j_insights.relationships_found && message.neo4j_insights.relationships_found.length > 0 && (
+                  <div className="mb-3">
+                    <p className="text-xs text-gray-400 mb-2 flex items-center gap-1">
+                      <GitBranch className="w-3 h-3 text-purple-400" />
+                      Relationships Traversed ({message.neo4j_insights.relationships_found.length})
+                    </p>
+                    <div className="space-y-1 max-h-32 overflow-y-auto">
+                      {message.neo4j_insights.relationships_found.slice(0, 10).map((rel, idx) => (
+                        <div key={idx} className="text-xs text-gray-400 bg-gray-800/50 rounded p-2 font-mono">
+                          <span className="text-purple-300">{rel.entity}</span>
+                          {' '}
+                          <span className="text-blue-400">--[{rel.relation}]--></span>
+                          {' '}
+                          <span className="text-green-300">{rel.target}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Before/After KG Comparison (Collapsible) */}
+                {message.answer_before_kg && message.answer_after_kg && (
+                  <div className="border-t border-blue-500/20 pt-3 mt-3">
+                    <button
+                      onClick={() => setExpandedThinking(prev => ({
+                        ...prev,
+                        [`${message.id}_comparison`]: !prev[`${message.id}_comparison`]
+                      }))}
+                      className="w-full flex items-center justify-between text-xs text-blue-300 hover:text-blue-200 transition-colors"
+                    >
+                      <span className="font-medium">📊 Compare Before/After KG Enrichment</span>
+                      {expandedThinking[`${message.id}_comparison`] ? (
+                        <ChevronUp className="w-4 h-4" />
+                      ) : (
+                        <ChevronDown className="w-4 h-4" />
+                      )}
+                    </button>
+
+                    {expandedThinking[`${message.id}_comparison`] && (
+                      <div className="mt-3 space-y-3">
+                        <div className="bg-red-900/20 border border-red-500/30 rounded p-3">
+                          <p className="text-xs font-semibold text-red-300 mb-2">❌ Before KG (Baseline)</p>
+                          <p className="text-xs text-gray-300 leading-relaxed line-clamp-4">
+                            {message.answer_before_kg.replace(/<[^>]*>/g, '').substring(0, 300)}...
+                          </p>
+                        </div>
+
+                        <div className="bg-green-900/20 border border-green-500/30 rounded p-3">
+                          <p className="text-xs font-semibold text-green-300 mb-2">✅ After KG (Enriched)</p>
+                          <p className="text-xs text-gray-300 leading-relaxed line-clamp-4">
+                            {message.answer_after_kg.replace(/<[^>]*>/g, '').substring(0, 300)}...
+                          </p>
+                        </div>
+
+                        <p className="text-xs text-gray-500 italic text-center">
+                          Knowledge graph added {message.neo4j_insights.relationships_found.length} relationships
+                          from {message.neo4j_insights.entities_found.length} entities
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             </div>
           )}
