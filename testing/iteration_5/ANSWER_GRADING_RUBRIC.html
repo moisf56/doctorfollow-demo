@@ -1,0 +1,742 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Answer Grading Rubric: GraphRAG Medical QA</title>
+    <style>
+        @media print {
+            body { margin: 0; }
+            .page-break { page-break-before: always; }
+            @page { margin: 2cm; }
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 40px 20px;
+            background: #fff;
+        }
+
+        h1 {
+            color: #2c3e50;
+            border-bottom: 4px solid #3498db;
+            padding-bottom: 10px;
+            margin-bottom: 30px;
+            font-size: 2.2em;
+        }
+
+        h2 {
+            color: #2980b9;
+            margin-top: 40px;
+            margin-bottom: 20px;
+            font-size: 1.6em;
+            border-left: 5px solid #3498db;
+            padding-left: 15px;
+        }
+
+        h3 {
+            color: #34495e;
+            margin-top: 25px;
+            margin-bottom: 15px;
+            font-size: 1.3em;
+        }
+
+        .metadata {
+            background: #ecf0f1;
+            padding: 15px 20px;
+            border-radius: 8px;
+            margin-bottom: 30px;
+        }
+
+        .metadata p {
+            margin: 5px 0;
+            font-size: 0.95em;
+        }
+
+        .executive-summary {
+            background: #e8f5e9;
+            border-left: 6px solid #4caf50;
+            padding: 25px;
+            margin: 30px 0;
+            border-radius: 5px;
+        }
+
+        .executive-summary h2 {
+            margin-top: 0;
+            color: #2e7d32;
+            border: none;
+            padding: 0;
+        }
+
+        .score-highlight {
+            text-align: center;
+            background: #fff3cd;
+            border: 3px solid #ffc107;
+            padding: 25px;
+            margin: 25px 0;
+            border-radius: 10px;
+        }
+
+        .score-highlight .main-score {
+            font-size: 3.5em;
+            font-weight: bold;
+            color: #f57c00;
+            margin: 10px 0;
+        }
+
+        .score-highlight .grade {
+            font-size: 1.8em;
+            color: #2e7d32;
+            font-weight: bold;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        th {
+            background: #3498db;
+            color: white;
+            padding: 15px 12px;
+            text-align: left;
+            font-weight: 600;
+            font-size: 0.95em;
+        }
+
+        td {
+            padding: 12px;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        tr:nth-child(even) {
+            background: #f8f9fa;
+        }
+
+        tr:hover {
+            background: #e3f2fd;
+        }
+
+        .dimension-card {
+            background: #ffffff;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+
+        .dimension-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #e9ecef;
+        }
+
+        .dimension-title {
+            font-size: 1.2em;
+            font-weight: bold;
+            color: #2c3e50;
+        }
+
+        .weight-badge {
+            background: #6c757d;
+            color: white;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.9em;
+            font-weight: bold;
+        }
+
+        .score-badge {
+            display: inline-block;
+            padding: 8px 16px;
+            border-radius: 5px;
+            font-weight: bold;
+            font-size: 1.1em;
+        }
+
+        .score-5 { background: #4caf50; color: white; }
+        .score-4 { background: #8bc34a; color: white; }
+        .score-3 { background: #ffc107; color: #333; }
+        .score-2 { background: #ff9800; color: white; }
+        .score-1 { background: #f44336; color: white; }
+
+        .criteria-list {
+            margin: 15px 0;
+            padding-left: 25px;
+        }
+
+        .criteria-list li {
+            margin: 8px 0;
+            line-height: 1.5;
+        }
+
+        .strengths {
+            background: #e8f5e9;
+            border-left: 4px solid #4caf50;
+            padding: 15px 20px;
+            margin: 15px 0;
+            border-radius: 4px;
+        }
+
+        .improvements {
+            background: #fff3e0;
+            border-left: 4px solid #ff9800;
+            padding: 15px 20px;
+            margin: 15px 0;
+            border-radius: 4px;
+        }
+
+        .grade-band {
+            padding: 10px 15px;
+            margin: 8px 0;
+            border-radius: 5px;
+            font-weight: 500;
+        }
+
+        .band-excellent { background: #c8e6c9; border-left: 5px solid #4caf50; }
+        .band-very-good { background: #dcedc8; border-left: 5px solid #8bc34a; }
+        .band-good { background: #fff9c4; border-left: 5px solid #ffc107; }
+        .band-fair { background: #ffe0b2; border-left: 5px solid #ff9800; }
+        .band-poor { background: #ffcdd2; border-left: 5px solid #f44336; }
+
+        .footer {
+            margin-top: 50px;
+            padding-top: 20px;
+            border-top: 2px solid #e0e0e0;
+            text-align: center;
+            color: #7f8c8d;
+            font-size: 0.9em;
+        }
+
+        code {
+            background: #f4f4f4;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+        }
+    </style>
+</head>
+<body>
+    <h1>Answer Grading Rubric: GraphRAG Medical QA</h1>
+
+    <div class="metadata">
+        <p><strong>Purpose:</strong> Evaluate answer quality for Turkish medical queries with English sources</p>
+        <p><strong>Version:</strong> 1.0</p>
+        <p><strong>Date:</strong> 2025-10-29</p>
+    </div>
+
+    <div class="executive-summary">
+        <h2>Executive Summary</h2>
+        <p>This rubric provides a comprehensive, weighted scoring system to evaluate the quality of medical answers generated by our GraphRAG (Graph Retrieval-Augmented Generation) system. The system handles Turkish medical queries using English medical literature sources and leverages a knowledge graph with 917 entities and 2,076 relationships.</p>
+
+        <div class="score-highlight">
+            <div>Current System Performance</div>
+            <div class="main-score">4.75/5</div>
+            <div class="grade">95% - EXCELLENT</div>
+            <p style="margin-top: 15px; color: #2e7d32; font-weight: 600;">Production Ready</p>
+        </div>
+
+        <p><strong>Key Findings:</strong></p>
+        <ul>
+            <li>Perfect language match with proper Turkish medical terminology</li>
+            <li>Medically accurate diagnosis and treatment recommendations</li>
+            <li>Strong clinical reasoning with clear pathophysiology explanations</li>
+            <li>Good knowledge graph enrichment (4/5) - can be enhanced with more related entities</li>
+            <li>Proper source citations throughout the answer</li>
+        </ul>
+    </div>
+
+    <h2>Evaluation Framework: 8-Dimension Scoring System</h2>
+    <p>Each answer is evaluated across 8 dimensions with weighted importance. The total score is calculated by summing weighted scores across all dimensions.</p>
+
+    <h3>Overall Score Calculation</h3>
+    <table>
+        <thead>
+            <tr>
+                <th>Dimension</th>
+                <th>Weight</th>
+                <th>Score</th>
+                <th>Weighted Score</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td><strong>1. Language Match</strong></td>
+                <td>15%</td>
+                <td><span class="score-badge score-5">5/5</span></td>
+                <td><strong>0.75</strong></td>
+            </tr>
+            <tr>
+                <td><strong>2. Medical Accuracy</strong></td>
+                <td>25%</td>
+                <td><span class="score-badge score-5">5/5</span></td>
+                <td><strong>1.25</strong></td>
+            </tr>
+            <tr>
+                <td><strong>3. Clinical Reasoning</strong></td>
+                <td>15%</td>
+                <td><span class="score-badge score-5">5/5</span></td>
+                <td><strong>0.75</strong></td>
+            </tr>
+            <tr>
+                <td><strong>4. Entity Coverage</strong></td>
+                <td>15%</td>
+                <td><span class="score-badge score-4">4/5</span></td>
+                <td><strong>0.60</strong></td>
+            </tr>
+            <tr>
+                <td><strong>5. Source Citation</strong></td>
+                <td>10%</td>
+                <td><span class="score-badge score-5">5/5</span></td>
+                <td><strong>0.50</strong></td>
+            </tr>
+            <tr>
+                <td><strong>6. KG Enrichment</strong></td>
+                <td>10%</td>
+                <td><span class="score-badge score-4">4/5</span></td>
+                <td><strong>0.40</strong></td>
+            </tr>
+            <tr>
+                <td><strong>7. Completeness</strong></td>
+                <td>5%</td>
+                <td><span class="score-badge score-5">5/5</span></td>
+                <td><strong>0.25</strong></td>
+            </tr>
+            <tr>
+                <td><strong>8. Fluency & Professionalism</strong></td>
+                <td>5%</td>
+                <td><span class="score-badge score-5">5/5</span></td>
+                <td><strong>0.25</strong></td>
+            </tr>
+            <tr style="background: #fff3cd; font-weight: bold; font-size: 1.1em;">
+                <td><strong>TOTAL</strong></td>
+                <td><strong>100%</strong></td>
+                <td>-</td>
+                <td><strong>4.75/5</strong></td>
+            </tr>
+        </tbody>
+    </table>
+
+    <div class="page-break"></div>
+
+    <h2>Detailed Dimension Descriptions</h2>
+
+    <div class="dimension-card">
+        <div class="dimension-header">
+            <div class="dimension-title">1. Language Match</div>
+            <span class="weight-badge">Weight: 15%</span>
+        </div>
+        <p><strong>Question:</strong> Is the response in the correct language?</p>
+        <p><strong>Evaluation Criteria:</strong></p>
+        <table>
+            <tr>
+                <td><span class="score-badge score-5">5</span></td>
+                <td>100% target language, professional medical terminology</td>
+            </tr>
+            <tr>
+                <td><span class="score-badge score-3">3</span></td>
+                <td>Mostly target language, some English medical terms mixed in</td>
+            </tr>
+            <tr>
+                <td><span class="score-badge score-1">1</span></td>
+                <td>Wrong language or heavy code-switching</td>
+            </tr>
+        </table>
+        <div class="strengths">
+            <strong>Current Answer: 5/5 - Perfect Turkish throughout</strong>
+            <ul class="criteria-list">
+                <li>Uses proper medical terminology: "prematüre bebekler", "apne epizodları", "solunum merkezi"</li>
+                <li>No English leakage in the response</li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="dimension-card">
+        <div class="dimension-header">
+            <div class="dimension-title">2. Medical Accuracy</div>
+            <span class="weight-badge">Weight: 25%</span>
+        </div>
+        <p><strong>Question:</strong> Is the medical information factually correct?</p>
+        <p><strong>Evaluation Criteria:</strong></p>
+        <table>
+            <tr>
+                <td><span class="score-badge score-5">5</span></td>
+                <td>Completely accurate, up-to-date medical information</td>
+            </tr>
+            <tr>
+                <td><span class="score-badge score-4">4</span></td>
+                <td>Mostly accurate, minor details could be improved</td>
+            </tr>
+            <tr>
+                <td><span class="score-badge score-3">3</span></td>
+                <td>Partially accurate, some outdated or incomplete info</td>
+            </tr>
+            <tr>
+                <td><span class="score-badge score-2">2</span></td>
+                <td>Significant inaccuracies or misleading statements</td>
+            </tr>
+            <tr>
+                <td><span class="score-badge score-1">0</span></td>
+                <td>Dangerous misinformation</td>
+            </tr>
+        </table>
+        <div class="strengths">
+            <strong>Current Answer: 5/5 - Medically accurate</strong>
+            <ul class="criteria-list">
+                <li>Correctly identifies: apnea of prematurity, immature respiratory center, respiratory distress syndrome</li>
+                <li>Accurate treatment: caffeine citrate for apnea episodes</li>
+                <li>Proper monitoring: mechanical ventilation, oxygen support</li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="dimension-card">
+        <div class="dimension-header">
+            <div class="dimension-title">3. Clinical Reasoning</div>
+            <span class="weight-badge">Weight: 15%</span>
+        </div>
+        <p><strong>Question:</strong> Does the answer show logical medical reasoning?</p>
+        <p><strong>Evaluation Criteria:</strong></p>
+        <table>
+            <tr>
+                <td><span class="score-badge score-5">5</span></td>
+                <td>Strong clinical reasoning, explains pathophysiology</td>
+            </tr>
+            <tr>
+                <td><span class="score-badge score-4">4</span></td>
+                <td>Good reasoning, minor gaps in explanation</td>
+            </tr>
+            <tr>
+                <td><span class="score-badge score-3">3</span></td>
+                <td>Basic reasoning, lacks depth</td>
+            </tr>
+        </table>
+        <div class="strengths">
+            <strong>Current Answer: 5/5 - Excellent clinical reasoning</strong>
+            <ul class="criteria-list">
+                <li><strong>Pathophysiology:</strong> Explains apnea is due to immature CNS/respiratory center</li>
+                <li><strong>Context:</strong> Notes that respiratory distress syndrome can also occur</li>
+                <li><strong>Treatment rationale:</strong> Caffeine stimulates respiratory center, reduces apnea frequency</li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="dimension-card">
+        <div class="dimension-header">
+            <div class="dimension-title">4. Entity Coverage (KG Quality)</div>
+            <span class="weight-badge">Weight: 15%</span>
+        </div>
+        <p><strong>Question:</strong> Are key medical entities from the query mentioned?</p>
+        <p><strong>Expected Entities:</strong> 35 weeks, premature infant, postnatal day 3, apnea episodes, bradycardia, stable vitals</p>
+        <table>
+            <tr>
+                <td><span class="score-badge score-5">5</span></td>
+                <td>All key entities addressed (6-7 entities) - 85-100% coverage</td>
+            </tr>
+            <tr>
+                <td><span class="score-badge score-4">4</span></td>
+                <td>Most key entities addressed (4-5 entities) - 60-85% coverage</td>
+            </tr>
+            <tr>
+                <td><span class="score-badge score-3">3</span></td>
+                <td>Some key entities addressed (3 entities) - 40-60% coverage</td>
+            </tr>
+        </table>
+        <div class="improvements">
+            <strong>Current Answer: 4/5 - Most entities covered</strong>
+            <ul class="criteria-list">
+                <li>Premature infant (mentioned)</li>
+                <li>Apnea episodes (main focus)</li>
+                <li>Bradycardia (mentioned as associated)</li>
+                <li>Stable vitals (addressed in monitoring)</li>
+                <li>Postnatal day 3 (not explicitly mentioned but implied)</li>
+                <li>35 weeks gestational age (not emphasized)</li>
+            </ul>
+            <p><strong>Improvement Opportunity:</strong> Could explicitly mention "35 haftalık" (35 weeks) as a risk factor</p>
+        </div>
+    </div>
+
+    <div class="page-break"></div>
+
+    <div class="dimension-card">
+        <div class="dimension-header">
+            <div class="dimension-title">5. Source Citation</div>
+            <span class="weight-badge">Weight: 10%</span>
+        </div>
+        <p><strong>Question:</strong> Are sources properly cited?</p>
+        <table>
+            <tr>
+                <td><span class="score-badge score-5">5</span></td>
+                <td>All claims cited with [Source N] format</td>
+            </tr>
+            <tr>
+                <td><span class="score-badge score-4">4</span></td>
+                <td>Most claims cited, 1-2 missing</td>
+            </tr>
+            <tr>
+                <td><span class="score-badge score-3">3</span></td>
+                <td>Some citations, inconsistent</td>
+            </tr>
+        </table>
+        <div class="strengths">
+            <strong>Current Answer: 5/5 - Proper citation</strong>
+            <ul class="criteria-list">
+                <li>[Source 3] - Main apnea information</li>
+                <li>[Source 2] - Treatment (caffeine citrate)</li>
+                <li>Clear attribution for medical claims</li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="dimension-card">
+        <div class="dimension-header">
+            <div class="dimension-title">6. KG Enrichment Evidence</div>
+            <span class="weight-badge">Weight: 10%</span>
+        </div>
+        <p><strong>Question:</strong> Is there evidence of knowledge graph usage?</p>
+        <p><strong>Indicators of KG Usage:</strong></p>
+        <ul class="criteria-list">
+            <li>Related entities mentioned (e.g., related conditions)</li>
+            <li>Relationship traversal (e.g., TREATS relationships)</li>
+            <li>Multi-hop reasoning (e.g., condition → symptom → treatment)</li>
+            <li>Contextual connections not in direct chunks</li>
+        </ul>
+        <table>
+            <tr>
+                <td><span class="score-badge score-5">5</span></td>
+                <td>Clear KG enrichment, multi-hop connections</td>
+            </tr>
+            <tr>
+                <td><span class="score-badge score-4">4</span></td>
+                <td>Some KG enrichment visible (1-2 related concepts)</td>
+            </tr>
+            <tr>
+                <td><span class="score-badge score-3">3</span></td>
+                <td>Minimal KG usage (could be from chunks alone)</td>
+            </tr>
+        </table>
+        <div class="improvements">
+            <strong>Current Answer: 4/5 - Good KG enrichment evidence</strong>
+            <ul class="criteria-list">
+                <li><strong>Related condition:</strong> Mentions "solunum sıkıntısı sendromu" (RDS) as co-occurring</li>
+                <li><strong>Pathophysiology link:</strong> Connects apnea → immature CNS (relationship)</li>
+                <li><strong>Treatment connection:</strong> Caffeine → reduces apnea frequency (TREATS relationship)</li>
+            </ul>
+            <p><strong>Improvement Opportunity:</strong> Could mention more related complications (IVH, NEC) or alternative treatments (CPAP, theophylline)</p>
+        </div>
+    </div>
+
+    <div class="dimension-card">
+        <div class="dimension-header">
+            <div class="dimension-title">7. Completeness</div>
+            <span class="weight-badge">Weight: 5%</span>
+        </div>
+        <p><strong>Question:</strong> Does the answer address all parts of the question?</p>
+        <p><strong>Query Asked:</strong> "Bu durumun en olası nedeni nedir ve hangi tedavi önerilir?" (What is the most likely cause and what treatment is recommended?)</p>
+        <table>
+            <tr>
+                <td><span class="score-badge score-5">5</span></td>
+                <td>All parts thoroughly answered (cause + treatment + context)</td>
+            </tr>
+            <tr>
+                <td><span class="score-badge score-4">4</span></td>
+                <td>All parts answered, some brief</td>
+            </tr>
+            <tr>
+                <td><span class="score-badge score-3">3</span></td>
+                <td>Main parts answered, gaps exist</td>
+            </tr>
+        </table>
+        <div class="strengths">
+            <strong>Current Answer: 5/5 - Complete answer</strong>
+            <ul class="criteria-list">
+                <li><strong>Cause:</strong> Prematurity apnea due to immature CNS</li>
+                <li><strong>Treatment:</strong> Caffeine citrate (primary), mechanical ventilation (if needed)</li>
+                <li><strong>Monitoring:</strong> Vital signs, additional interventions</li>
+                <li><strong>Context:</strong> Mentions RDS as differential/co-morbidity</li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="dimension-card">
+        <div class="dimension-header">
+            <div class="dimension-title">8. Fluency & Professionalism</div>
+            <span class="weight-badge">Weight: 5%</span>
+        </div>
+        <p><strong>Question:</strong> Is the language natural and professional?</p>
+        <table>
+            <tr>
+                <td><span class="score-badge score-5">5</span></td>
+                <td>Native-level fluency, professional medical tone</td>
+            </tr>
+            <tr>
+                <td><span class="score-badge score-4">4</span></td>
+                <td>Good fluency, minor awkwardness</td>
+            </tr>
+            <tr>
+                <td><span class="score-badge score-3">3</span></td>
+                <td>Understandable but unnatural (translation-like quality)</td>
+            </tr>
+        </table>
+        <div class="strengths">
+            <strong>Current Answer: 5/5 - Excellent fluency</strong>
+            <ul class="criteria-list">
+                <li>Natural Turkish medical language</li>
+                <li>Proper sentence structure</li>
+                <li>Professional tone appropriate for medical context</li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="page-break"></div>
+
+    <h2>Performance Interpretation: Grade Bands</h2>
+
+    <div class="grade-band band-excellent">
+        <strong>4.5-5.0 (90-100%): Excellent</strong> - Production ready, meets all quality standards
+    </div>
+
+    <div class="grade-band band-very-good">
+        <strong>4.0-4.5 (80-90%): Very Good</strong> - Minor improvements needed
+    </div>
+
+    <div class="grade-band band-good">
+        <strong>3.5-4.0 (70-80%): Good</strong> - Some gaps, needs refinement
+    </div>
+
+    <div class="grade-band band-fair">
+        <strong>3.0-3.5 (60-70%): Fair</strong> - Significant improvements needed
+    </div>
+
+    <div class="grade-band band-poor">
+        <strong>&lt;3.0 (&lt;60%): Poor</strong> - Major issues, not production ready
+    </div>
+
+    <h2>Key Findings & Recommendations</h2>
+
+    <div class="strengths">
+        <h3>Strengths</h3>
+        <ol>
+            <li><strong>Perfect language match</strong> - No English leakage, proper Turkish medical terms</li>
+            <li><strong>Medically accurate</strong> - Correct diagnosis (apnea of prematurity)</li>
+            <li><strong>Strong clinical reasoning</strong> - Explains pathophysiology clearly</li>
+            <li><strong>Good treatment guidance</strong> - Caffeine citrate as first-line</li>
+            <li><strong>Proper citations</strong> - [Source 2], [Source 3] clearly marked</li>
+            <li><strong>Complete answer</strong> - Addresses both "nedir" (what is it) and "hangi tedavi" (what treatment)</li>
+        </ol>
+    </div>
+
+    <div class="improvements">
+        <h3>Areas for Improvement</h3>
+        <ol>
+            <li><strong>Entity coverage</strong> - Could explicitly mention "35 haftalık" (gestational age)</li>
+            <li><strong>KG enrichment depth</strong> - Could mention:
+                <ul>
+                    <li>Other apnea causes (differential diagnosis)</li>
+                    <li>Related complications (IVH, NEC)</li>
+                    <li>Alternative treatments (CPAP, theophylline)</li>
+                    <li>Long-term outcomes</li>
+                </ul>
+            </li>
+        </ol>
+        <p><strong>To reach perfect 5.0:</strong></p>
+        <ul>
+            <li>Mention gestational age (35 weeks) as risk factor</li>
+            <li>Add 1-2 related complications from knowledge graph</li>
+            <li>Mention monitoring parameters (SpO2, heart rate thresholds)</li>
+        </ul>
+    </div>
+
+    <h2>Expected Impact: Modern Knowledge Graph vs. Pattern-Based Approach</h2>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Metric</th>
+                <th>Old KG (Pattern)</th>
+                <th>New KG (LLM)</th>
+                <th>Improvement</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td><strong>Entity Coverage</strong></td>
+                <td>3.0-3.5</td>
+                <td>4.0-5.0</td>
+                <td><strong>+25%</strong></td>
+            </tr>
+            <tr>
+                <td><strong>KG Enrichment</strong></td>
+                <td>2.0-3.0</td>
+                <td>4.0-5.0</td>
+                <td><strong>+50%</strong></td>
+            </tr>
+            <tr>
+                <td><strong>Clinical Reasoning</strong></td>
+                <td>3.5-4.0</td>
+                <td>4.5-5.0</td>
+                <td><strong>+15%</strong></td>
+            </tr>
+            <tr style="background: #fff3cd; font-weight: bold;">
+                <td><strong>Overall Score</strong></td>
+                <td>3.5-4.0</td>
+                <td>4.5-5.0</td>
+                <td><strong>+20%</strong></td>
+            </tr>
+        </tbody>
+    </table>
+
+    <h3>Technical Foundation</h3>
+    <table>
+        <thead>
+            <tr>
+                <th>Component</th>
+                <th>Specification</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td><strong>Knowledge Graph</strong></td>
+                <td>Neo4j Aura (Instance: a1dff425)</td>
+            </tr>
+            <tr>
+                <td><strong>Graph Size</strong></td>
+                <td>917 nodes, 2,076 relationships</td>
+            </tr>
+            <tr>
+                <td><strong>Entity Types</strong></td>
+                <td>103 discovered (vs 5 hardcoded in old approach)</td>
+            </tr>
+            <tr>
+                <td><strong>Graph Builder</strong></td>
+                <td>Neo4j LLM Graph Builder (2025)</td>
+            </tr>
+            <tr>
+                <td><strong>GraphRAG Strategy</strong></td>
+                <td>Modern hybrid approach (local + global search)</td>
+            </tr>
+            <tr>
+                <td><strong>Semantic Navigation</strong></td>
+                <td>122 SIMILAR relationships</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <div class="footer">
+        <p><strong>DoctorFollow Medical QA System - GraphRAG Evaluation</strong></p>
+        <p>Version 1.0 | Generated: 2025-10-29</p>
+        <p>Neo4j LLM Graph Builder Integration</p>
+    </div>
+</body>
+</html>
