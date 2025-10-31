@@ -54,6 +54,7 @@ class MedicalRAGState(TypedDict):
     query: str
     query_language: str  # Detected language code (e.g., 'tr', 'en')
     query_complexity: str  # 'simple_fact' or 'complex_reasoning'
+    translated_query: str  # English translation for KG search (if non-English)
     bm25_chunks: List[dict]
     semantic_chunks: List[dict]
     fused_chunks: List[dict]
