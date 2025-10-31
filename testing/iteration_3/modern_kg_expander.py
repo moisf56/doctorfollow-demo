@@ -33,6 +33,33 @@ class ModernKGExpander:
     def __init__(self, neo4j_store: Neo4jStore):
         self.neo4j = neo4j_store
 
+    def _retry_neo4j_query(self, func, *args, max_retries=3, **kwargs):
+        """
+        Retry Neo4j queries with exponential backoff for transient connection failures
+
+        Args:
+            func: The function to execute
+            max_retries: Maximum number of retry attempts
+            *args, **kwargs: Arguments to pass to func
+
+        Returns:
+            Result from func or None if all retries fail
+        """
+        for attempt in range(max_retries):
+            try:
+                return func(*args, **kwargs)
+            except (ServiceUnavailable, SessionExpired) as e:
+                if attempt < max_retries - 1:
+                    wait_time = 2 ** attempt  # Exponential backoff: 1s, 2s, 4s
+                    print(f"  [RETRY] Neo4j connection error (attempt {attempt + 1}/{max_retries}), retrying in {wait_time}s...")
+                    time.sleep(wait_time)
+                else:
+                    print(f"  [ERROR] Neo4j connection failed after {max_retries} attempts: {e}")
+                    return None
+            except Exception as e:
+                print(f"  [ERROR] Unexpected error in Neo4j query: {e}")
+                return None
+
     def expand_with_graph(
         self,
         query: str,
@@ -335,15 +362,19 @@ class ModernKGExpander:
         """
         Find chunks similar to given chunk via SIMILAR relationships
         """
-        with self.neo4j.driver.session() as session:
-            query = """
-            MATCH (start:Chunk {id: $chunk_id})-[s:SIMILAR]-(similar:Chunk)
-            RETURN similar.text AS text, similar.id AS id
-            ORDER BY s.score DESC
-            LIMIT $limit
-            """
-            result = session.run(query, chunk_id=chunk_id, limit=limit)
-            return [{"id": r["id"], "text": r["text"]} for r in result]
+        def _query():
+            with self.neo4j.driver.session() as session:
+                query = """
+                MATCH (start:Chunk {id: $chunk_id})-[s:SIMILAR]-(similar:Chunk)
+                RETURN similar.text AS text, similar.id AS id
+                ORDER BY s.score DESC
+                LIMIT $limit
+                """
+                result = session.run(query, chunk_id=chunk_id, limit=limit)
+                return [{"id": r["id"], "text": r["text"]} for r in result]
+
+        result = self._retry_neo4j_query(_query)
+        return result if result is not None else []
 
     def _merge_contexts(self, local_context: str, global_context: str) -> str:
         """Merge local and global contexts"""
