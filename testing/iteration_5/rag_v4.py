@@ -130,6 +130,7 @@ class MedicalRAGv4(MedicalRAGv3):
             "query": query,
             "query_language": language,
             "query_complexity": "simple",  # Force simple to skip KG
+            "translated_query": query,  # Will be set by translation node
             "bm25_chunks": [],
             "semantic_chunks": [],
             "fused_chunks": [],
