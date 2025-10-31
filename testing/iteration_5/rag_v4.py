@@ -194,20 +194,31 @@ class MedicalRAGv4(MedicalRAGv3):
         - Which relationships were traversed
         - What strategy was used
         """
-        # Extract entities using the KG expander's method
-        entities = self.kg_expander._extract_entity_names(query, chunks)
+        # Extract entities using the KG expander's method (if it has the method)
+        entities = []
+        try:
+            if hasattr(self.kg_expander, '_extract_entity_names'):
+                entities = self.kg_expander._extract_entity_names(query, chunks)
+        except Exception as e:
+            print(f"[DEBUG] Could not extract entities: {e}")
+            entities = []
 
         # Parse relationships from kg_context
         relationships = self._parse_relationships_from_context(kg_context)
 
         # Determine strategy used
-        strategy = self.kg_expander._detect_query_strategy(query, chunks)
+        strategy = "local"  # Default
+        try:
+            if hasattr(self.kg_expander, '_detect_query_strategy'):
+                strategy = self.kg_expander._detect_query_strategy(query, chunks)
+        except Exception as e:
+            print(f"[DEBUG] Could not detect strategy: {e}")
 
         # Check if KG was actually used
         kg_enabled = complexity in ["complex", "complex_reasoning"]
 
         return {
-            "entities_found": entities[:10],  # Limit to 10 for display
+            "entities_found": entities[:10] if entities else [],  # Limit to 10 for display
             "relationships_found": relationships,
             "strategy_used": strategy,
             "kg_enrichment_enabled": kg_enabled,
