@@ -262,18 +262,58 @@ class MedicalRAGv3:
             "fused_chunks": fused_chunks
         }
 
-    def kg_enrich_node(self, state: MedicalRAGState) -> MedicalRAGState:
-        """Knowledge graph enrichment node"""
+    def translate_medical_query_node(self, state: MedicalRAGState) -> MedicalRAGState:
+        """Translate non-English medical queries to English for KG entity matching"""
         query = state["query"]
+        language = state.get("query_language", "en")
+
+        try:
+            print(f"\n[TRANSLATE] Checking if translation needed (language: {language})...")
+        except UnicodeEncodeError:
+            print(f"\n[TRANSLATE] Checking if translation needed...")
+
+        # Only translate if query is in Turkish (or other non-English)
+        if language == "tr":
+            print(f"  [TRANSLATE] Translating Turkish medical query to English for KG search...")
+
+            translation_prompt = f"""Translate this Turkish medical query to English, preserving all medical terminology and abbreviations.
+Focus on accurate medical term translation. Keep medical abbreviations (like GBS, WBC, CRP) as-is.
+
+Turkish query: {query}
+
+Provide ONLY the English translation, nothing else:"""
+
+            try:
+                response = self.llm.invoke(translation_prompt)
+                translated_query = response.content.strip()
+                print(f"  [OK] Translated query: {translated_query[:100]}...")
+            except Exception as e:
+                print(f"  [ERROR] Translation failed: {e}")
+                translated_query = query  # Fallback to original
+        else:
+            print(f"  [SKIP] Query already in English, no translation needed")
+            translated_query = query
+
+        return {
+            **state,
+            "translated_query": translated_query
+        }
+
+    def kg_enrich_node(self, state: MedicalRAGState) -> MedicalRAGState:
+        """Knowledge graph enrichment node - uses translated query for entity extraction"""
+        query = state["query"]  # Original query (for display/logging)
+        translated_query = state.get("translated_query", query)  # Translated for KG search
         chunks = state["fused_chunks"]
 
         try:
             print(f"\n[KG ENRICH] Expanding with knowledge graph...")
+            if translated_query != query:
+                print(f"  [KG] Using translated query for entity extraction")
         except UnicodeEncodeError:
             print("\n[KG ENRICH] Expanding with knowledge graph...")
 
-        # Expand with KG context
-        kg_context = self.kg_expander.expand_with_graph(query, chunks, max_hops=2)
+        # Expand with KG context using TRANSLATED query for entity extraction
+        kg_context = self.kg_expander.expand_with_graph(translated_query, chunks, max_hops=2)
 
         if kg_context:
             print(f"  [OK] Added knowledge graph context ({len(kg_context)} chars)")
