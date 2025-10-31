@@ -181,6 +181,7 @@ class MedicalRAGv3:
 
         # Add nodes (language detection removed - done in API)
         workflow.add_node("hybrid_retrieve", self.hybrid_retrieve_node)
+        workflow.add_node("translate_medical_query", self.translate_medical_query_node)
         workflow.add_node("kg_enrich", self.kg_enrich_node)
         workflow.add_node("generate", self.generate_node)
 
@@ -196,9 +197,12 @@ class MedicalRAGv3:
         # Define edges
         workflow.set_entry_point("hybrid_retrieve")  # Start directly with retrieval
 
-        # Conditional edge: simple → generate, complex → kg_enrich
+        # Always translate after retrieval (translation node will skip if already English)
+        workflow.add_edge("hybrid_retrieve", "translate_medical_query")
+
+        # Conditional edge from translation: simple → generate, complex → kg_enrich
         workflow.add_conditional_edges(
-            "hybrid_retrieve",
+            "translate_medical_query",
             should_use_kg,
             {
                 "kg_enrich": "kg_enrich",
