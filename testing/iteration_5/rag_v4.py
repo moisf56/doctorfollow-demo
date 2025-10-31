@@ -162,6 +162,7 @@ class MedicalRAGv4(MedicalRAGv3):
             "query": query,
             "query_language": language,
             "query_complexity": complexity,  # Force complex to enable KG
+            "translated_query": query,  # Will be set by translation node
             "bm25_chunks": [],
             "semantic_chunks": [],
             "fused_chunks": [],
