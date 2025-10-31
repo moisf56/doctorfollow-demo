@@ -63,6 +63,7 @@ class PgVectorStore:
         self.table_name = table_name
         self.embedding_dimension = embedding_dimension
         self.embedding_model = embedding_model
+        self.connection_string = connection_string  # Store for reconnection
 
         # Connect to PostgreSQL
         self.conn = psycopg2.connect(connection_string)
@@ -306,19 +307,31 @@ class PgVectorStore:
             "table_name": self.table_name
         }
     
+    def _reconnect(self):
+        """Reconnect to PostgreSQL database"""
+        try:
+            self.conn.close()
+        except:
+            pass
+        self.conn = psycopg2.connect(self.connection_string)
+        self.conn.autocommit = False
+        print("  [RECONNECT] PostgreSQL connection re-established")
+
     def search(
         self,
         query: str,
         top_k: int = 10,
-        filters: Optional[Dict[str, Any]] = None
+        filters: Optional[Dict[str, Any]] = None,
+        max_retries: int = 3
     ) -> List[SearchResult]:
         """
-        Semantic search using cosine similarity
+        Semantic search using cosine similarity with automatic retry on connection errors
 
         Args:
             query: Search query (Turkish or English)
             top_k: Number of results to return
             filters: Optional filters (e.g., {"page_number": 5})
+            max_retries: Maximum retry attempts for transient errors
 
         Returns:
             List of SearchResult objects sorted by similarity
@@ -330,7 +343,7 @@ class PgVectorStore:
         else:
             # Jina AI API (saves ~600MB memory!)
             query_embedding = self._encode_via_api(query)
-        
+
         # Build WHERE clause for filters
         where_clause = ""
         filter_values = []
@@ -340,38 +353,54 @@ class PgVectorStore:
                 conditions.append(f"{key} = %s")
                 filter_values.append(value)
             where_clause = "WHERE " + " AND ".join(conditions)
-        
-        # Search using cosine similarity
-        with self.conn.cursor() as cur:
-            query_sql = f"""
-                SELECT 
-                    chunk_id,
-                    text,
-                    page_number,
-                    paragraph_id,
-                    metadata,
-                    1 - (embedding <=> %s::vector) as similarity
-                FROM {self.table_name}
-                {where_clause}
-                ORDER BY embedding <=> %s::vector
-                LIMIT %s
-            """
-            
-            params = [query_embedding.tolist()] + filter_values + [query_embedding.tolist(), top_k]
-            cur.execute(query_sql, params)
-            
-            results = []
-            for row in cur.fetchall():
-                results.append(SearchResult(
-                    chunk_id=row[0],
-                    text=row[1],
-                    page_number=row[2],
-                    paragraph_id=row[3],
-                    metadata=row[4] or {},
-                    score=float(row[5])  # Cosine similarity (0-1, higher is better)
-                ))
-        
-        return results
+
+        # Retry logic for transient connection errors
+        for attempt in range(max_retries):
+            try:
+                # Search using cosine similarity
+                with self.conn.cursor() as cur:
+                    query_sql = f"""
+                        SELECT
+                            chunk_id,
+                            text,
+                            page_number,
+                            paragraph_id,
+                            metadata,
+                            1 - (embedding <=> %s::vector) as similarity
+                        FROM {self.table_name}
+                        {where_clause}
+                        ORDER BY embedding <=> %s::vector
+                        LIMIT %s
+                    """
+
+                    params = [query_embedding.tolist()] + filter_values + [query_embedding.tolist(), top_k]
+                    cur.execute(query_sql, params)
+
+                    results = []
+                    for row in cur.fetchall():
+                        results.append(SearchResult(
+                            chunk_id=row[0],
+                            text=row[1],
+                            page_number=row[2],
+                            paragraph_id=row[3],
+                            metadata=row[4] or {},
+                            score=float(row[5])  # Cosine similarity (0-1, higher is better)
+                        ))
+
+                return results
+
+            except (psycopg2.OperationalError, psycopg2.InterfaceError) as e:
+                if attempt < max_retries - 1:
+                    wait_time = 2 ** attempt  # Exponential backoff: 1s, 2s, 4s
+                    print(f"  [RETRY] PostgreSQL connection error (attempt {attempt + 1}/{max_retries}), reconnecting in {wait_time}s...")
+                    time.sleep(wait_time)
+                    self._reconnect()
+                else:
+                    print(f"  [ERROR] PostgreSQL query failed after {max_retries} attempts: {e}")
+                    return []
+            except Exception as e:
+                print(f"  [ERROR] Unexpected error in PostgreSQL query: {e}")
+                return []
     
     def get_stats(self) -> Dict[str, Any]:
         """Get table statistics"""

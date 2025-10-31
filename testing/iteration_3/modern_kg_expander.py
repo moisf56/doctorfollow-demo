@@ -361,20 +361,26 @@ class ModernKGExpander:
     def _find_similar_chunks(self, chunk_id: str, limit: int = 3) -> List[Dict]:
         """
         Find chunks similar to given chunk via SIMILAR relationships
+        Uses managed transactions for automatic retry on transient errors
         """
-        def _query():
-            with self.neo4j.driver.session() as session:
-                query = """
-                MATCH (start:Chunk {id: $chunk_id})-[s:SIMILAR]-(similar:Chunk)
-                RETURN similar.text AS text, similar.id AS id
-                ORDER BY s.score DESC
-                LIMIT $limit
-                """
-                result = session.run(query, chunk_id=chunk_id, limit=limit)
-                return [{"id": r["id"], "text": r["text"]} for r in result]
+        def _execute_query(tx):
+            query = """
+            MATCH (start:Chunk {id: $chunk_id})-[s:SIMILAR]-(similar:Chunk)
+            RETURN similar.text AS text, similar.id AS id
+            ORDER BY s.score DESC
+            LIMIT $limit
+            """
+            result = tx.run(query, chunk_id=chunk_id, limit=limit)
+            return [{"id": r["id"], "text": r["text"]} for r in result]
 
-        result = self._retry_neo4j_query(_query)
-        return result if result is not None else []
+        try:
+            with self.neo4j.driver.session(
+                max_transaction_retry_time=30.0  # 30 seconds retry window
+            ) as session:
+                return session.execute_read(_execute_query)
+        except Exception as e:
+            print(f"  [ERROR] Neo4j query failed after retries: {e}")
+            return []
 
     def _merge_contexts(self, local_context: str, global_context: str) -> str:
         """Merge local and global contexts"""
