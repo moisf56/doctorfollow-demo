@@ -315,9 +315,9 @@ Entities:"""
             print(f"  [ERROR] Entity traversal failed for '{entity_name}': {e}")
             return ""
 
-            context_lines = [f"Entity: {entity} ({entity_type})"]
+        context_lines = [f"Entity: {entity} ({entity_type})"]
 
-            # Format direct relationships
+        # Format direct relationships
             if direct_rels:
                 # Group by relationship type
                 rel_groups = {}
