@@ -251,6 +251,7 @@ Entities:"""
     ) -> str:
         """
         Traverse entity neighborhood in graph
+        Uses driver.execute_query() for automatic retry
 
         Query Pattern:
         1. Find entity node
@@ -258,55 +259,61 @@ Entities:"""
         3. Collect related entities and relationship types
         4. Format as context
         """
-        with self.neo4j.driver.session() as session:
-            # Multi-hop traversal query
-            query = f"""
-            MATCH (start)
-            WHERE start.name = $entity_name
+        # Multi-hop traversal query
+        query = """
+        MATCH (start)
+        WHERE start.name = $entity_name
 
-            // Get direct relationships (1 hop)
-            OPTIONAL MATCH (start)-[r1]-(related1)
-            WHERE NOT related1:Chunk AND NOT related1:Document
+        // Get direct relationships (1 hop)
+        OPTIONAL MATCH (start)-[r1]-(related1)
+        WHERE NOT related1:Chunk AND NOT related1:Document
 
-            // Get 2-hop relationships (if max_hops >= 2)
-            OPTIONAL MATCH (start)-[r1]-(related1)-[r2]-(related2)
-            WHERE NOT related1:Chunk AND NOT related1:Document
-            AND NOT related2:Chunk AND NOT related2:Document
-            AND $max_hops >= 2
+        // Get 2-hop relationships (if max_hops >= 2)
+        OPTIONAL MATCH (start)-[r1]-(related1)-[r2]-(related2)
+        WHERE NOT related1:Chunk AND NOT related1:Document
+        AND NOT related2:Chunk AND NOT related2:Document
+        AND $max_hops >= 2
 
-            WITH start,
-                 collect(DISTINCT {{
-                     rel_type: type(r1),
-                     target: related1.name,
-                     target_type: labels(related1)[0]
-                 }}) AS direct_rels,
-                 collect(DISTINCT {{
-                     rel_type: type(r2),
-                     target: related2.name,
-                     target_type: labels(related2)[0]
-                 }}) AS indirect_rels
+        WITH start,
+             collect(DISTINCT {
+                 rel_type: type(r1),
+                 target: related1.name,
+                 target_type: labels(related1)[0]
+             }) AS direct_rels,
+             collect(DISTINCT {
+                 rel_type: type(r2),
+                 target: related2.name,
+                 target_type: labels(related2)[0]
+             }) AS indirect_rels
 
-            RETURN
-                start.name AS entity,
-                labels(start)[0] AS entity_type,
-                direct_rels,
-                indirect_rels
-            """
+        RETURN
+            start.name AS entity,
+            labels(start)[0] AS entity_type,
+            direct_rels,
+            indirect_rels
+        """
 
-            result = session.run(
+        try:
+            records, summary, keys = self.neo4j.driver.execute_query(
                 query,
                 entity_name=entity_name,
-                max_hops=max_hops
-            ).single()
+                max_hops=max_hops,
+                database_="neo4j"
+            )
 
-            if not result:
+            if not records:
                 return ""
+
+            result = records[0]
 
             # Format context
             entity = result["entity"]
             entity_type = result["entity_type"]
             direct_rels = result["direct_rels"]
             indirect_rels = result["indirect_rels"] if max_hops >= 2 else []
+        except Exception as e:
+            print(f"  [ERROR] Entity traversal failed for '{entity_name}': {e}")
+            return ""
 
             context_lines = [f"Entity: {entity} ({entity_type})"]
 
