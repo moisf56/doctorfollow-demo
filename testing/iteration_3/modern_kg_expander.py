@@ -318,42 +318,42 @@ Entities:"""
         context_lines = [f"Entity: {entity} ({entity_type})"]
 
         # Format direct relationships
-            if direct_rels:
-                # Group by relationship type
-                rel_groups = {}
-                for rel in direct_rels:
-                    if rel["target"]:  # Skip None values
-                        rel_type = rel["rel_type"]
-                        if rel_type not in rel_groups:
-                            rel_groups[rel_type] = []
-                        rel_groups[rel_type].append(f"{rel['target']} ({rel['target_type']})")
+        if direct_rels:
+            # Group by relationship type
+            rel_groups = {}
+            for rel in direct_rels:
+                if rel["target"]:  # Skip None values
+                    rel_type = rel["rel_type"]
+                    if rel_type not in rel_groups:
+                        rel_groups[rel_type] = []
+                    rel_groups[rel_type].append(f"{rel['target']} ({rel['target_type']})")
 
+            for rel_type, targets in sorted(rel_groups.items()):
+                targets_str = ", ".join(targets[:5])  # Limit to 5 per relationship type
+                if len(targets) > 5:
+                    targets_str += f" ... and {len(targets) - 5} more"
+                context_lines.append(f"  {rel_type}: {targets_str}")
+
+        # Format indirect relationships (2-hop)
+        if indirect_rels and max_hops >= 2:
+            # Only show most relevant indirect relationships
+            rel_groups = {}
+            for rel in indirect_rels:
+                if rel["target"]:
+                    rel_type = rel["rel_type"]
+                    if rel_type not in rel_groups:
+                        rel_groups[rel_type] = []
+                    rel_groups[rel_type].append(rel["target"])
+
+            if rel_groups:
+                context_lines.append("  Related (2-hop):")
                 for rel_type, targets in sorted(rel_groups.items()):
-                    targets_str = ", ".join(targets[:5])  # Limit to 5 per relationship type
-                    if len(targets) > 5:
-                        targets_str += f" ... and {len(targets) - 5} more"
-                    context_lines.append(f"  {rel_type}: {targets_str}")
+                    targets_str = ", ".join(targets[:3])  # Limit to 3
+                    if len(targets) > 3:
+                        targets_str += "..."
+                    context_lines.append(f"    {rel_type}: {targets_str}")
 
-            # Format indirect relationships (2-hop)
-            if indirect_rels and max_hops >= 2:
-                # Only show most relevant indirect relationships
-                rel_groups = {}
-                for rel in indirect_rels:
-                    if rel["target"]:
-                        rel_type = rel["rel_type"]
-                        if rel_type not in rel_groups:
-                            rel_groups[rel_type] = []
-                        rel_groups[rel_type].append(rel["target"])
-
-                if rel_groups:
-                    context_lines.append("  Related (2-hop):")
-                    for rel_type, targets in sorted(rel_groups.items()):
-                        targets_str = ", ".join(targets[:3])  # Limit to 3
-                        if len(targets) > 3:
-                            targets_str += "..."
-                        context_lines.append(f"    {rel_type}: {targets_str}")
-
-            return "\n".join(context_lines)
+        return "\n".join(context_lines)
 
     def _global_semantic_search(self, query: str, chunks: List[Dict]) -> str:
         """

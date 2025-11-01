@@ -131,7 +131,7 @@ class MedicalRAGv3:
 
         # Initialize RRF fusion with weighted semantic similarity (2x more important than BM25)
         self.rrf_fusion = RRFFusion(k=rrf_k, semantic_weight=2.0, bm25_weight=1.0)
-        self.kg_expander = ModernKGExpander(self.neo4j)  # NEW: Use modern strategies
+        self.kg_expander = ModernKGExpander(self.neo4j, llm=self.llm)  # Pass LLM for LLM-based entity extraction
 
         # Retrieval parameters
         self.top_k_bm25 = top_k_bm25
