@@ -220,21 +220,29 @@ Entities:"""
     def _search_entities_by_name(self, search_term: str) -> List[str]:
         """
         Search for entities in Neo4j that match search term
-
         Uses CONTAINS for partial matching (e.g., "pulmonary" matches "pulmonary hypertension")
+        Uses driver.execute_query() for automatic retry
         """
-        with self.neo4j.driver.session() as session:
-            query = """
-            MATCH (e)
-            WHERE toLower(e.name) CONTAINS toLower($search_term)
-            AND e.name IS NOT NULL
-            AND NOT e:Chunk  // Exclude chunk nodes
-            AND NOT e:Document  // Exclude document nodes
-            RETURN DISTINCT e.name AS name
-            LIMIT 5
-            """
-            result = session.run(query, search_term=search_term)
-            return [record["name"] for record in result]
+        query = """
+        MATCH (e)
+        WHERE toLower(e.name) CONTAINS toLower($search_term)
+        AND e.name IS NOT NULL
+        AND NOT e:Chunk
+        AND NOT e:Document
+        RETURN DISTINCT e.name AS name
+        LIMIT 5
+        """
+
+        try:
+            records, summary, keys = self.neo4j.driver.execute_query(
+                query,
+                search_term=search_term,
+                database_="neo4j"
+            )
+            return [record["name"] for record in records]
+        except Exception as e:
+            print(f"  [ERROR] Entity search failed: {e}")
+            return []
 
     def _traverse_entity_neighborhood(
         self,
