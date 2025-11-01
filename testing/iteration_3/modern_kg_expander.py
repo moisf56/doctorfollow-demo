@@ -30,8 +30,9 @@ class ModernKGExpander:
     - Document structure: Document -> Chunks (PART_OF, NEXT_CHUNK, SIMILAR)
     """
 
-    def __init__(self, neo4j_store: Neo4jStore):
+    def __init__(self, neo4j_store: Neo4jStore, llm=None):
         self.neo4j = neo4j_store
+        self.llm = llm  # LLM for entity extraction
 
     def _retry_neo4j_query(self, func, *args, max_retries=3, **kwargs):
         """
@@ -168,33 +169,53 @@ class ModernKGExpander:
 
     def _extract_entity_names(self, query: str, chunks: List[Dict]) -> List[str]:
         """
-        Extract potential entity names from query and chunks
+        Extract medical entities from query using LLM-based extraction
 
-        Strategy:
-        - Medical abbreviations (PPHN, RDS, ECMO, etc.)
-        - Capitalized medical terms
-        - Terms from chunks that might be entities
+        This replaces regex-based extraction with a more robust LLM approach that can:
+        - Identify medical conditions, diseases, symptoms
+        - Recognize medications and treatments
+        - Extract both abbreviations and full names (e.g., "GBS" and "Group B Streptococcus")
+        - Understand medical context
         """
-        entities = set()
+        if not self.llm:
+            print("  [WARNING] No LLM available for entity extraction, falling back to empty list")
+            return []
 
-        # Pattern 1: Medical abbreviations (all caps, 2-6 letters)
-        abbreviation_pattern = r'\b[A-Z]{2,6}\b'
-        entities.update(re.findall(abbreviation_pattern, query))
-
-        # Pattern 2: Medical terms from chunks (sample first chunk only to save time)
+        # Build context from query and top retrieved chunk
+        context = query
         if chunks:
-            sample_text = chunks[0].get("text", "")[:500]  # First 500 chars
-            entities.update(re.findall(abbreviation_pattern, sample_text))
+            context += f"\n\nRelevant context: {chunks[0].get('text', '')[:300]}"
 
-        # Pattern 3: Search for entities in Neo4j that match query terms
-        # (more expensive but more accurate)
-        query_words = query.lower().split()
-        for word in query_words:
-            if len(word) > 3:  # Skip short words
-                matched_entities = self._search_entities_by_name(word)
-                entities.update(matched_entities)
+        extraction_prompt = f"""Extract ALL medical entities from the following text. Include:
+- Diseases and conditions (e.g., "Group B Streptococcus", "respiratory distress", "sepsis")
+- Symptoms (e.g., "tachypnea", "lethargy", "fever")
+- Medications and treatments (e.g., "ampicillin", "gentamicin", "antibiotics")
+- Medical abbreviations AND their full forms (e.g., both "GBS" and "Group B Streptococcus")
+- Laboratory findings (e.g., "WBC", "CRP", "leukopenia")
+- Procedures (e.g., "intubation", "mechanical ventilation")
 
-        return list(entities)[:10]  # Limit to 10 entities
+Text:
+{context}
+
+Return ONLY a comma-separated list of medical entities. Include both abbreviations and full names when applicable.
+Example: "GBS, Group B Streptococcus, sepsis, ampicillin, WBC, leukopenia"
+
+Entities:"""
+
+        try:
+            response = self.llm.invoke(extraction_prompt)
+            entity_text = response.content.strip()
+
+            # Parse comma-separated entities
+            entities = [e.strip() for e in entity_text.split(',') if e.strip()]
+
+            print(f"  [LLM EXTRACTION] Found {len(entities)} entities: {entities[:5]}...")
+
+            return entities[:15]  # Limit to 15 entities
+
+        except Exception as e:
+            print(f"  [ERROR] LLM entity extraction failed: {e}")
+            return []
 
     def _search_entities_by_name(self, search_term: str) -> List[str]:
         """
